@@ -3,6 +3,7 @@ import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import errToast from "../../utils/ErrorToast";
+import successToast from "../../utils/SuccessToast";
 
 const LogInFields = ({ loginForm, updateLogin }) => {
   const [remember, setRemember] = useState(false);
@@ -26,6 +27,11 @@ const LogInFields = ({ loginForm, updateLogin }) => {
 
       console.log("login successful:", response.data);
       console.log("Token:", response.data.token);
+
+      // Display success message from backend
+      if (response.data.message) {
+        successToast(response.data.message);
+      }
     } catch (error) {
       if (error.response) {
         const errors = error.response.data.error;
