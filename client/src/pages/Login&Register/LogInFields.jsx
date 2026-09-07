@@ -1,51 +1,53 @@
+import React, { useState } from "react";
+import Field from "./Field";
+import axios from "axios";
+import { FiEye, FiEyeOff } from "react-icons/fi";
+import errToast from "../../utils/ErrorToast";
 
-import React, { useState } from 'react'
-import Field from './Field';
-import axios from "axios"
-import errToast from '../../utils/ErrorToast';
 const LogInFields = ({ loginForm, updateLogin }) => {
+  const [remember, setRemember] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(loginForm) 
+    console.log(loginForm);
+
     try {
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
         {
-
           email: loginForm.loginEmail,
           password: loginForm.loginPassword,
+        },
+        {
+          withCredentials: true,
         }
       );
 
       console.log("login successful:", response.data);
-
-      // JWT returned by backend
       console.log("Token:", response.data.token);
-
     } catch (error) {
       if (error.response) {
-        // Backend returned an error response
         const errors = error.response.data.error;
-        console.log(errors)
+        console.log(errors);
+
         errors.forEach((err) => {
-          errToast(err)
-        })
+          errToast(err);
+        });
       } else if (error.request) {
-        // Request was sent but no response was received
         console.error(
           "No response from server:",
           error.request
         );
       } else {
-        // Error while setting up the request
         console.error(
           "Request failed:",
           error.message
         );
       }
     }
-  }
-  const [remember, setRemember] = useState(false)
+  };
+
   return (
     <form className="space-y-3.5" onSubmit={handleSubmit}>
       <Field
@@ -57,17 +59,32 @@ const LogInFields = ({ loginForm, updateLogin }) => {
         autoComplete="email"
       />
 
-      <Field
-        name="loginPassword"
-        type="password"
-        placeholder="enter password..."
-        value={loginForm.loginPassword}
-        onChange={updateLogin("loginPassword")}
-        autoComplete="current-password"
-      />
+      <div className="relative">
+        <Field
+          name="loginPassword"
+          type={showPassword ? "text" : "password"}
+          placeholder="enter password..."
+          value={loginForm.loginPassword}
+          onChange={updateLogin("loginPassword")}
+          autoComplete="current-password"
+        />
+
+        <button
+          type="button"
+          onClick={() => setShowPassword((prev) => !prev)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-gray-400 transition-colors hover:text-gray-600"
+          aria-label={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? (
+            <FiEyeOff size={18} />
+          ) : (
+            <FiEye size={18} />
+          )}
+        </button>
+      </div>
 
       <div className="flex items-center justify-between pt-0.5">
-        <label className="flex items-center gap-2 text-[12.5px] text-[#687585] cursor-pointer select-none">
+        <label className="flex cursor-pointer select-none items-center gap-2 text-[12.5px] text-[#687585]">
           <input
             type="checkbox"
             checked={remember}
@@ -80,7 +97,7 @@ const LogInFields = ({ loginForm, updateLogin }) => {
 
         <button
           type="button"
-          className="text-[12.5px] text-[#687585] hover:text-[#1F8A70] transition-colors"
+          className="cursor-pointer text-[12.5px] text-[#687585] transition-colors hover:text-[#1F8A70]"
         >
           Forgot Password?
         </button>
@@ -88,7 +105,7 @@ const LogInFields = ({ loginForm, updateLogin }) => {
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#1F8A70]"
+        className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#1F8A70]"
       >
         Log In
       </button>
@@ -96,4 +113,4 @@ const LogInFields = ({ loginForm, updateLogin }) => {
   );
 };
 
-export default LogInFields
+export default LogInFields;

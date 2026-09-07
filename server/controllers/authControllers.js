@@ -142,5 +142,25 @@ const loginUser = async (req, res) => {
   }
 };
 
+ const logout = async (req, res) => {
+  try {
+    res.clearCookie("token", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+    });
 
-export { registerUser, loginUser }
+    return res.status(200).json({
+      message: ["Logout successful"],
+    });
+  } catch (error) {
+    console.error("Logout error:", error);
+
+    return res.status(500).json({
+      error: ["Logout failed"],
+    });
+  }
+};
+
+
+export { registerUser, loginUser, logout }

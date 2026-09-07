@@ -1,4 +1,4 @@
-import React from 'react'
+import React from "react";
 
 function Field({
   type = "text",
@@ -10,7 +10,7 @@ function Field({
 }) {
   return (
     <input
-    required
+      required
       id={name}
       name={name}
       type={type}
@@ -18,9 +18,9 @@ function Field({
       value={value}
       onChange={onChange}
       autoComplete={autoComplete}
-      className="w-full rounded-lg bg-[#F3F5F3] px-4 py-2.5 text-[13.5px] text-[#14233B] placeholder:text-[#8E938F] outline-none transition-shadow duration-150 focus:ring-2 focus:ring-[#1F8A70]/25"
+      className="w-full rounded-lg bg-[#F3F5F3] px-4 py-2.5 pr-11 text-[13.5px] text-[#14233B] placeholder:text-[#8E938F] outline-none transition-shadow duration-150 focus:ring-2 focus:ring-[#1F8A70]/25"
     />
   );
 }
 
-export default Field
+export default Field;

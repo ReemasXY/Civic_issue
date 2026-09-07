@@ -1,12 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { FiSun, FiUser, FiMenu, FiX, FiLogOut } from "react-icons/fi";
+import {
+  FiSun,
+  FiUser,
+  FiMenu,
+  FiX,
+  FiLogOut,
+} from "react-icons/fi";
 import { PiShieldCheckDuotone } from "react-icons/pi";
+import { useNavigate } from "react-router";
 import axios from "axios";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [activeLink, setActiveLink] = useState("Home");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  const navigate = useNavigate();
 
   const navLinks = [
     "Home",
@@ -27,10 +36,7 @@ export default function Navbar() {
           }
         );
 
-        if (response.data.user) {
-          console.log(response.data.user);
-          setIsLoggedIn(true);
-        }
+        setIsLoggedIn(!!response.data.user);
       } catch (error) {
         console.log(error);
         setIsLoggedIn(false);
@@ -43,6 +49,12 @@ export default function Navbar() {
   const handleLinkClick = (label) => {
     setActiveLink(label);
     setIsOpen(false);
+  };
+
+  // Navigate to login page
+  const handleLogin = () => {
+    setIsOpen(false);
+    navigate("/login");
   };
 
   // Logout
@@ -66,8 +78,6 @@ export default function Navbar() {
   return (
     <header className="fixed z-[100] w-full border-b border-slate-200 bg-white">
       <nav className="mx-auto max-w-[1150px] px-6">
-
-        {/* Main Navbar */}
         <div className="flex h-[73px] items-center justify-between">
 
           {/* Logo */}
@@ -83,7 +93,7 @@ export default function Navbar() {
             </span>
           </a>
 
-          {/* Navigation Links */}
+          {/* Navigation */}
           <ul
             className={`
               absolute left-0 top-[73px] z-[100] w-full
@@ -137,7 +147,6 @@ export default function Navbar() {
                 >
                   {label}
 
-                  {/* Active underline */}
                   <span
                     className={`
                       absolute left-0 -bottom-[17px]
@@ -166,7 +175,7 @@ export default function Navbar() {
                   type="button"
                   aria-label="Toggle theme"
                   className="
-                    flex h-9 w-9 cursor-pointer items-center justify-center
+                    flex h-9 w-9 items-center justify-center
                     rounded-full border border-slate-200
                     text-slate-600
                     transition-colors duration-200
@@ -182,7 +191,7 @@ export default function Navbar() {
                     type="button"
                     onClick={handleLogout}
                     className="
-                      flex flex-1 cursor-pointer items-center justify-center gap-2
+                      flex flex-1 items-center justify-center gap-2
                       rounded-lg bg-slate-900 px-4 py-2
                       text-sm font-semibold text-white
                       transition-colors duration-200
@@ -195,8 +204,9 @@ export default function Navbar() {
                 ) : (
                   <button
                     type="button"
+                    onClick={handleLogin}
                     className="
-                      flex flex-1 cursor-pointer items-center justify-center gap-2
+                      flex flex-1 items-center justify-center gap-2
                       rounded-lg bg-slate-900 px-4 py-2
                       text-sm font-semibold text-white
                       transition-colors duration-200
@@ -219,7 +229,7 @@ export default function Navbar() {
               type="button"
               aria-label="Toggle theme"
               className="
-                flex h-9 w-9 cursor-pointer items-center justify-center
+                flex h-9 w-9 items-center justify-center
                 rounded-full border border-slate-200
                 text-slate-600
                 transition-colors duration-200
@@ -235,7 +245,7 @@ export default function Navbar() {
                 type="button"
                 onClick={handleLogout}
                 className="
-                  flex cursor-pointer items-center gap-2
+                  flex items-center gap-2
                   rounded-lg bg-slate-900 px-4 py-2
                   text-sm font-semibold text-white
                   transition-colors duration-200
@@ -248,8 +258,9 @@ export default function Navbar() {
             ) : (
               <button
                 type="button"
+                onClick={handleLogin}
                 className="
-                  flex cursor-pointer items-center gap-2
+                  flex items-center gap-2
                   rounded-lg bg-slate-900 px-4 py-2
                   text-sm font-semibold text-white
                   transition-colors duration-200
@@ -262,7 +273,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Hamburger Button */}
+          {/* Mobile Menu Button */}
           <button
             type="button"
             aria-label={isOpen ? "Close menu" : "Open menu"}
@@ -302,7 +313,6 @@ export default function Navbar() {
               `}
             />
           </button>
-
         </div>
       </nav>
     </header>

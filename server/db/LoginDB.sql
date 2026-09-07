@@ -21,5 +21,3 @@ CREATE TABLE users (
 
 SELECT * FROM users;
 
-ALTER DATABASE "LoginDB"
-RENAME TO "civic_care_db";
