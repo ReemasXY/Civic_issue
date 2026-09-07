@@ -21,16 +21,18 @@ export default function Navbar() {
     const checkAuth = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/auth/me",
+          "http://localhost:5000/api/auth/getuser",
           {
             withCredentials: true,
           }
         );
 
         if (response.data.user) {
+          console.log(response.data.user);
           setIsLoggedIn(true);
         }
       } catch (error) {
+        console.log(error);
         setIsLoggedIn(false);
       }
     };
@@ -159,12 +161,12 @@ export default function Navbar() {
             <li className="mt-2 border-t border-slate-200 pt-4 min-[865px]:hidden">
               <div className="flex items-center gap-3">
 
-                {/* Theme */}
+                {/* Theme Button */}
                 <button
                   type="button"
                   aria-label="Toggle theme"
                   className="
-                    flex h-9 w-9 items-center justify-center
+                    flex h-9 w-9 cursor-pointer items-center justify-center
                     rounded-full border border-slate-200
                     text-slate-600
                     transition-colors duration-200
@@ -176,43 +178,25 @@ export default function Navbar() {
 
                 {/* Authentication */}
                 {isLoggedIn ? (
-                  <>
-                    {/* Profile */}
-                    <button
-                      type="button"
-                      className="
-                        flex flex-1 items-center justify-center gap-2
-                        rounded-lg bg-slate-900 px-4 py-2
-                        text-sm font-semibold text-white
-                        transition-colors duration-200
-                        hover:bg-slate-800
-                      "
-                    >
-                      <FiUser className="h-4 w-4" />
-                      Profile
-                    </button>
-
-                    {/* Logout */}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      aria-label="Logout"
-                      className="
-                        flex h-9 w-9 items-center justify-center
-                        rounded-lg border border-slate-200
-                        text-slate-600
-                        transition-colors duration-200
-                        hover:bg-slate-100
-                      "
-                    >
-                      <FiLogOut className="h-4 w-4" />
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="
+                      flex flex-1 cursor-pointer items-center justify-center gap-2
+                      rounded-lg bg-slate-900 px-4 py-2
+                      text-sm font-semibold text-white
+                      transition-colors duration-200
+                      hover:bg-slate-800
+                    "
+                  >
+                    <FiLogOut className="h-4 w-4" />
+                    Logout
+                  </button>
                 ) : (
                   <button
                     type="button"
                     className="
-                      flex flex-1 items-center justify-center gap-2
+                      flex flex-1 cursor-pointer items-center justify-center gap-2
                       rounded-lg bg-slate-900 px-4 py-2
                       text-sm font-semibold text-white
                       transition-colors duration-200
@@ -230,12 +214,12 @@ export default function Navbar() {
           {/* Desktop Actions */}
           <div className="hidden items-center gap-3 min-[865px]:flex">
 
-            {/* Theme */}
+            {/* Theme Button */}
             <button
               type="button"
               aria-label="Toggle theme"
               className="
-                flex h-9 w-9 items-center justify-center
+                flex h-9 w-9 cursor-pointer items-center justify-center
                 rounded-full border border-slate-200
                 text-slate-600
                 transition-colors duration-200
@@ -247,43 +231,25 @@ export default function Navbar() {
 
             {/* Authentication */}
             {isLoggedIn ? (
-              <>
-                {/* Profile */}
-                <button
-                  type="button"
-                  className="
-                    flex items-center gap-2
-                    rounded-lg bg-slate-900 px-4 py-2
-                    text-sm font-semibold text-white
-                    transition-colors duration-200
-                    hover:bg-slate-800
-                  "
-                >
-                  <FiUser className="h-4 w-4" />
-                  Profile
-                </button>
-
-                {/* Logout */}
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  aria-label="Logout"
-                  className="
-                    flex h-9 w-9 items-center justify-center
-                    rounded-lg border border-slate-200
-                    text-slate-600
-                    transition-colors duration-200
-                    hover:bg-slate-100
-                  "
-                >
-                  <FiLogOut className="h-4 w-4" />
-                </button>
-              </>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="
+                  flex cursor-pointer items-center gap-2
+                  rounded-lg bg-slate-900 px-4 py-2
+                  text-sm font-semibold text-white
+                  transition-colors duration-200
+                  hover:bg-slate-800
+                "
+              >
+                <FiLogOut className="h-4 w-4" />
+                Logout
+              </button>
             ) : (
               <button
                 type="button"
                 className="
-                  flex items-center gap-2
+                  flex cursor-pointer items-center gap-2
                   rounded-lg bg-slate-900 px-4 py-2
                   text-sm font-semibold text-white
                   transition-colors duration-200
@@ -296,7 +262,7 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Hamburger */}
+          {/* Hamburger Button */}
           <button
             type="button"
             aria-label={isOpen ? "Close menu" : "Open menu"}
@@ -336,6 +302,7 @@ export default function Navbar() {
               `}
             />
           </button>
+
         </div>
       </nav>
     </header>
