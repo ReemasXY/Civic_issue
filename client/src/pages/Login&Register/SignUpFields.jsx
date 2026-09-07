@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useNavigate } from "react-router";
 import errToast from "../../utils/ErrorToast.js";
 import successToast from "../../utils/SuccessToast.js";
 
 const SignUpFields = ({ signUpForm, update }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +36,11 @@ const SignUpFields = ({ signUpForm, update }) => {
       if (response.data.message) {
         successToast(response.data.message);
       }
+
+      // Redirect to home page after successful registration
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
     } catch (error) {
       if (error.response) {
         console.error(

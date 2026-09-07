@@ -11,18 +11,36 @@ const registerUser = async (req, res) => {
       password,
     } = req.body;
 
-    const existingUser = await pool.query(
-      `SELECT user_id
-       FROM users
-       WHERE email = $1
-          OR username = $2
-          OR phone_number = $3`,
-      [email, username, phone_number]
+    // Check email
+    const existingEmail = await pool.query(
+      `SELECT user_id FROM users WHERE email = $1`,
+      [email]
     );
-
-    if (existingUser.rows.length > 0) {
+    if (existingEmail.rows.length > 0) {
       return res.status(409).json({
-        error: ["Email, username, or phone number already exists"],
+        error: ["Email is already registered"],
+      });
+    }
+
+    // Check username
+    const existingUsername = await pool.query(
+      `SELECT user_id FROM users WHERE username = $1`,
+      [username]
+    );
+    if (existingUsername.rows.length > 0) {
+      return res.status(409).json({
+        error: ["Username is already taken"],
+      });
+    }
+
+    // Check phone number
+    const existingPhone = await pool.query(
+      `SELECT user_id FROM users WHERE phone_number = $1`,
+      [phone_number]
+    );
+    if (existingPhone.rows.length > 0) {
+      return res.status(409).json({
+        error: ["Phone number is already registered"],
       });
     }
 
@@ -46,21 +64,21 @@ const registerUser = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Token now expires in 24h — matches the cookie's maxAge
+    // JWT token without expiration - cookie handles expiration
     const token = jwt.sign(
       {
         user_id: user.user_id,
+        username: user.username,
         role: user.role,
       },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      process.env.JWT_SECRET
     );
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // Cookie expires in 24 hours
     });
 
     return res.status(201).json({
@@ -107,21 +125,21 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Token now expires in 24h — matches the cookie's maxAge
+    // JWT token without expiration - cookie handles expiration
     const token = jwt.sign(
       {
         user_id: user.user_id,
+        username: user.username,
         role: user.role,
       },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
+      process.env.JWT_SECRET
     );
 
     res.cookie("token", token, {
       httpOnly: true,
       secure: false,
       sameSite: "lax",
-      maxAge: 24 * 60 * 60 * 1000,
+      maxAge: 24 * 60 * 60 * 1000, // Cookie expires in 24 hours
     });
 
     return res.status(200).json({

@@ -9,6 +9,7 @@ import {
 import { PiShieldCheckDuotone } from "react-icons/pi";
 import { useNavigate } from "react-router";
 import axios from "axios";
+import successToast from "../utils/SuccessToast";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,6 +17,7 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navigate = useNavigate();
+  
 
   const navLinks = [
     "Home",
@@ -47,19 +49,6 @@ export default function Navbar() {
 
     checkAuth();
 
-    const handlePageShow = (event) => {
-      if (event.persisted) {
-        setIsLoggedIn(false);
-      }
-
-      checkAuth();
-    };
-
-    window.addEventListener("pageshow", handlePageShow);
-
-    return () => {
-      window.removeEventListener("pageshow", handlePageShow);
-    };
   }, []);
 
   const handleLinkClick = (label) => {
@@ -69,13 +58,22 @@ export default function Navbar() {
 
   const handleLogout = async () => {
     try {
-      await axios.post(
+      const response = await axios.post(
         "http://localhost:5000/api/auth/logout",
         {},
         {
           withCredentials: true,
         }
       );
+
+      // Display success message from backend
+      if (response.data.message) {
+        if (Array.isArray(response.data.message)) {
+          response.data.message.forEach((msg) => successToast(msg));
+        } else {
+          successToast(response.data.message);
+        }
+      }
 
       setIsLoggedIn(false);
       setIsOpen(false);

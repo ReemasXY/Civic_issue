@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
+import { useNavigate } from "react-router";
 import errToast from "../../utils/ErrorToast";
 import successToast from "../../utils/SuccessToast";
 
 const LogInFields = ({ loginForm, updateLogin }) => {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -32,6 +34,11 @@ const LogInFields = ({ loginForm, updateLogin }) => {
       if (response.data.message) {
         successToast(response.data.message);
       }
+
+      // Redirect to home page after successful login
+      setTimeout(() => {
+        navigate("/");
+      }, 2000);
     } catch (error) {
       if (error.response) {
         const errors = error.response.data.error;
