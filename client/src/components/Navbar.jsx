@@ -25,7 +25,6 @@ export default function Navbar() {
     "Contact",
   ];
 
-  // Check if user is logged in
   useEffect(() => {
     const checkAuth = async () => {
       try {
@@ -33,17 +32,34 @@ export default function Navbar() {
           "http://localhost:5000/api/auth/getuser",
           {
             withCredentials: true,
+            headers: {
+              "Cache-Control": "no-cache",
+              Pragma: "no-cache",
+            },
           }
         );
 
-        setIsLoggedIn(!!response.data.user);
+        setIsLoggedIn(Boolean(response.data.user));
       } catch (error) {
-        console.log(error);
         setIsLoggedIn(false);
       }
     };
 
     checkAuth();
+
+    const handlePageShow = (event) => {
+      if (event.persisted) {
+        setIsLoggedIn(false);
+      }
+
+      checkAuth();
+    };
+
+    window.addEventListener("pageshow", handlePageShow);
+
+    return () => {
+      window.removeEventListener("pageshow", handlePageShow);
+    };
   }, []);
 
   const handleLinkClick = (label) => {
@@ -51,13 +67,6 @@ export default function Navbar() {
     setIsOpen(false);
   };
 
-  // Navigate to login page
-  const handleLogin = () => {
-    setIsOpen(false);
-    navigate("/login");
-  };
-
-  // Logout
   const handleLogout = async () => {
     try {
       await axios.post(
@@ -70,6 +79,8 @@ export default function Navbar() {
 
       setIsLoggedIn(false);
       setIsOpen(false);
+
+      navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);
     }
@@ -83,7 +94,10 @@ export default function Navbar() {
           {/* Logo */}
           <a
             href="#"
-            onClick={() => handleLinkClick("Home")}
+            onClick={(e) => {
+              e.preventDefault();
+              handleLinkClick("Home");
+            }}
             className="flex items-center gap-2"
           >
             <PiShieldCheckDuotone className="h-8 w-8 text-slate-800" />
@@ -93,7 +107,7 @@ export default function Navbar() {
             </span>
           </a>
 
-          {/* Navigation */}
+          {/* Navigation Links */}
           <ul
             className={`
               absolute left-0 top-[73px] z-[100] w-full
@@ -166,7 +180,7 @@ export default function Navbar() {
               </li>
             ))}
 
-            {/* Mobile Actions */}
+            {/* Mobile Controls */}
             <li className="mt-2 border-t border-slate-200 pt-4 min-[865px]:hidden">
               <div className="flex items-center gap-3">
 
@@ -175,7 +189,8 @@ export default function Navbar() {
                   type="button"
                   aria-label="Toggle theme"
                   className="
-                    flex h-9 w-9 items-center justify-center
+                    flex h-9 w-9 cursor-pointer
+                    items-center justify-center
                     rounded-full border border-slate-200
                     text-slate-600
                     transition-colors duration-200
@@ -185,13 +200,14 @@ export default function Navbar() {
                   <FiSun className="h-4 w-4" />
                 </button>
 
-                {/* Authentication */}
+                {/* Login / Logout */}
                 {isLoggedIn ? (
                   <button
                     type="button"
                     onClick={handleLogout}
                     className="
-                      flex flex-1 items-center justify-center gap-2
+                      flex flex-1 cursor-pointer
+                      items-center justify-center gap-2
                       rounded-lg bg-slate-900 px-4 py-2
                       text-sm font-semibold text-white
                       transition-colors duration-200
@@ -204,9 +220,13 @@ export default function Navbar() {
                 ) : (
                   <button
                     type="button"
-                    onClick={handleLogin}
+                    onClick={() => {
+                      setIsOpen(false);
+                      navigate("/login");
+                    }}
                     className="
-                      flex flex-1 items-center justify-center gap-2
+                      flex flex-1 cursor-pointer
+                      items-center justify-center gap-2
                       rounded-lg bg-slate-900 px-4 py-2
                       text-sm font-semibold text-white
                       transition-colors duration-200
@@ -214,14 +234,14 @@ export default function Navbar() {
                     "
                   >
                     <FiUser className="h-4 w-4" />
-                    Login / Register
+                    Login
                   </button>
                 )}
               </div>
             </li>
           </ul>
 
-          {/* Desktop Actions */}
+          {/* Desktop Controls */}
           <div className="hidden items-center gap-3 min-[865px]:flex">
 
             {/* Theme Button */}
@@ -229,7 +249,8 @@ export default function Navbar() {
               type="button"
               aria-label="Toggle theme"
               className="
-                flex h-9 w-9 items-center justify-center
+                flex h-9 w-9 cursor-pointer
+                items-center justify-center
                 rounded-full border border-slate-200
                 text-slate-600
                 transition-colors duration-200
@@ -239,13 +260,14 @@ export default function Navbar() {
               <FiSun className="h-4 w-4" />
             </button>
 
-            {/* Authentication */}
+            {/* Login / Logout */}
             {isLoggedIn ? (
               <button
                 type="button"
                 onClick={handleLogout}
                 className="
-                  flex items-center gap-2
+                  flex cursor-pointer
+                  items-center gap-2
                   rounded-lg bg-slate-900 px-4 py-2
                   text-sm font-semibold text-white
                   transition-colors duration-200
@@ -258,9 +280,10 @@ export default function Navbar() {
             ) : (
               <button
                 type="button"
-                onClick={handleLogin}
+                onClick={() => navigate("/login")}
                 className="
-                  flex items-center gap-2
+                  flex cursor-pointer
+                  items-center gap-2
                   rounded-lg bg-slate-900 px-4 py-2
                   text-sm font-semibold text-white
                   transition-colors duration-200
@@ -268,7 +291,7 @@ export default function Navbar() {
                 "
               >
                 <FiUser className="h-4 w-4" />
-                Login / Register
+                Login
               </button>
             )}
           </div>
@@ -281,9 +304,10 @@ export default function Navbar() {
             onClick={() => setIsOpen((prev) => !prev)}
             className="
               relative flex h-9 w-9 cursor-pointer
-              items-center justify-center rounded-lg
-              text-slate-700 transition-colors
-              duration-200 hover:bg-slate-100
+              items-center justify-center
+              rounded-lg text-slate-700
+              transition-colors duration-200
+              hover:bg-slate-100
               min-[865px]:hidden
             "
           >
@@ -313,6 +337,7 @@ export default function Navbar() {
               `}
             />
           </button>
+
         </div>
       </nav>
     </header>

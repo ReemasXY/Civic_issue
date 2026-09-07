@@ -11,7 +11,6 @@ const registerUser = async (req, res) => {
       password,
     } = req.body;
 
-    //Checking whether the database has the existing email,phone number or username or not
     const existingUser = await pool.query(
       `SELECT user_id
        FROM users
@@ -27,13 +26,10 @@ const registerUser = async (req, res) => {
       });
     }
 
-    //GENERATING HASH FOR THE PASSWORD
     const saltRounds = process.env.SALT_ROUNDS
-    // console.log(saltRounds)
     const salt = await bcrypt.genSalt(Number(saltRounds))
     const hashPassword = await bcrypt.hash(password, salt)
 
-    //Inserting register information in the database
     const result = await pool.query(
       `INSERT INTO users
         (email, username, phone_number, password_hash)
@@ -48,31 +44,29 @@ const registerUser = async (req, res) => {
       ]
     );
 
-
     const user = result.rows[0];
 
-    // Generate JWT 
+    // Token now expires in 24h — matches the cookie's maxAge
     const token = jwt.sign(
-      //payload
       {
         user_id: user.user_id,
         role: user.role,
       },
-      //jwt secrect code
       process.env.JWT_SECRET,
-
-      //expired date: 1 day
-      {
-        expiresIn: process.env.JWT_EXPIRES_IN || "1d",
-      }
+      { expiresIn: "24h" }
     );
-    return res.status(201).json({
-      message: "User registered successfully",
-      // user: result.rows[0],
-      token
+
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
     });
 
-
+    return res.status(201).json({
+      message: "User registered successfully",
+      token
+    });
 
   } catch (error) {
     console.error("Registration error:", error);
@@ -82,11 +76,11 @@ const registerUser = async (req, res) => {
     });
   }
 }
+
 const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log(email, password)
-    //Find user by email
+
     const result = await pool.query(
       `SELECT user_id, email, username, phone_number, password_hash, role
        FROM users
@@ -94,7 +88,6 @@ const loginUser = async (req, res) => {
       [email]
     );
 
-    // User doesn't exist
     if (result.rows.length === 0) {
       return res.status(401).json({
         error: ["Invalid email or password"],
@@ -103,7 +96,6 @@ const loginUser = async (req, res) => {
 
     const user = result.rows[0];
 
-    // Compare entered password with hashed password
     const isPasswordValid = await bcrypt.compare(
       password,
       user.password_hash
@@ -115,19 +107,23 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // 5. Create JWT
+    // Token now expires in 24h — matches the cookie's maxAge
     const token = jwt.sign(
       {
         user_id: user.user_id,
         role: user.role,
       },
       process.env.JWT_SECRET,
-      {
-        expiresIn: "1d",
-      }
+      { expiresIn: "24h" }
     );
 
-    // 6. Send response
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     return res.status(200).json({
       message: "Login successful",
       token,
@@ -142,8 +138,31 @@ const loginUser = async (req, res) => {
   }
 };
 
- const logout = async (req, res) => {
+const getUser = async (req, res) => {
   try {
+    // Prevent the browser (and bfcache/back-nav) from ever replaying
+    // a cached copy of this response
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.set("Pragma", "no-cache");
+
+    return res.status(200).json({
+      success: true,
+      user: req.user,
+    });
+  } catch (error) {
+    console.error("Get Me Error:", error);
+
+    return res.status(500).json({
+      error: ["Server Error"]
+    });
+  }
+};
+
+const logout = async (req, res) => {
+  try {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
+    res.set("Pragma", "no-cache");
+
     res.clearCookie("token", {
       httpOnly: true,
       secure: false,
@@ -162,5 +181,4 @@ const loginUser = async (req, res) => {
   }
 };
 
-
-export { registerUser, loginUser, logout }
+export { registerUser, loginUser, getUser, logout }
