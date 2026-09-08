@@ -1,20 +1,20 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { useNavigate } from "react-router";
 import errToast from "../../utils/ErrorToast.js";
 import successToast from "../../utils/SuccessToast.js";
 
-const SignUpFields = ({ signUpForm, update }) => {
+const SignUpFields = ({ signUpForm, update, onShowOTP }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     try {
+      setIsLoading(true);
       const response = await axios.post(
         "http://localhost:5000/api/auth/register",
         {
@@ -29,18 +29,17 @@ const SignUpFields = ({ signUpForm, update }) => {
         }
       );
 
-      console.log("Registration successful:", response.data);
-      console.log("Token:", response.data.token);
+      console.log("Registration response:", response.data);
 
       // Display success message from backend
       if (response.data.message) {
         successToast(response.data.message);
       }
 
-      // Redirect to home page after successful registration
+      // Show OTP verification
       setTimeout(() => {
-        navigate("/");
-      }, 2000);
+        onShowOTP(signUpForm.email, "registration");
+      }, 1000);
     } catch (error) {
       if (error.response) {
         console.error(
@@ -58,12 +57,16 @@ const SignUpFields = ({ signUpForm, update }) => {
           "No response from server:",
           error.request
         );
+        errToast("Server is not responding. Please try again.");
       } else {
         console.error(
           "Request failed:",
           error.message
         );
+        errToast("An unexpected error occurred.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -151,9 +154,10 @@ const SignUpFields = ({ signUpForm, update }) => {
 
       <button
         type="submit"
-        className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#1F8A70] mt-1"
+        disabled={isLoading}
+        className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-all duration-200 hover:bg-[#1F8A70] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#14233B] mt-1"
       >
-        Sign Up
+        {isLoading ? "Sending code..." : "Sign Up"}
       </button>
     </form>
   );

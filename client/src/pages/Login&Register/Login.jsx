@@ -1,15 +1,19 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import { gsap } from "gsap";
 import { useGSAP } from "@gsap/react";
 
 import MobileLogin from "./MobileLogin";
 import DesktopLogin from "./DesktopLogin";
+import OTPVerification from "./OTPVerification";
 import Toast from "../../utils/Toast";
 
 gsap.registerPlugin(useGSAP);
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showOTP, setShowOTP] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+  const [otpPurpose, setOtpPurpose] = useState("");
 
   const loginRef = useRef(null);
 
@@ -40,6 +44,12 @@ export default function Login() {
     }));
   };
 
+  const handleShowOTP = (email, purpose) => {
+    setUserEmail(email);
+    setOtpPurpose(purpose);
+    setShowOTP(true);
+  };
+
   useGSAP(
     () => {
       if (!loginRef.current) return;
@@ -63,6 +73,7 @@ export default function Login() {
     },
     {
       scope: loginRef,
+      dependencies: [showOTP],
     }
   );
 
@@ -83,23 +94,31 @@ export default function Login() {
         ref={loginRef}
         className="min-h-screen w-full flex items-center justify-center px-4 py-6"
       >
-        <MobileLogin
-          signUpForm={signUpForm}
-          update={update}
-          isSignUp={isSignUp}
-          setIsSignUp={setIsSignUp}
-          loginForm={loginForm}
-          updateLogin={updateLogin}
-        />
+        {showOTP ? (
+          <OTPVerification email={userEmail} purpose={otpPurpose} />
+        ) : (
+          <>
+            <MobileLogin
+              signUpForm={signUpForm}
+              update={update}
+              isSignUp={isSignUp}
+              setIsSignUp={setIsSignUp}
+              loginForm={loginForm}
+              updateLogin={updateLogin}
+              onShowOTP={handleShowOTP}
+            />
 
-        <DesktopLogin
-          signUpForm={signUpForm}
-          update={update}
-          isSignUp={isSignUp}
-          setIsSignUp={setIsSignUp}
-          loginForm={loginForm}
-          updateLogin={updateLogin}
-        />
+            <DesktopLogin
+              signUpForm={signUpForm}
+              update={update}
+              isSignUp={isSignUp}
+              setIsSignUp={setIsSignUp}
+              loginForm={loginForm}
+              updateLogin={updateLogin}
+              onShowOTP={handleShowOTP}
+            />
+          </>
+        )}
       </div>
     </div>
   );

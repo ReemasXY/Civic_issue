@@ -1,21 +1,21 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
-import { useNavigate } from "react-router";
 import errToast from "../../utils/ErrorToast";
 import successToast from "../../utils/SuccessToast";
 
-const LogInFields = ({ loginForm, updateLogin }) => {
+const LogInFields = ({ loginForm, updateLogin, onShowOTP }) => {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const navigate = useNavigate();
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     console.log(loginForm);
 
     try {
+      setIsLoading(true);
       const response = await axios.post(
         "http://localhost:5000/api/auth/login",
         {
@@ -27,18 +27,17 @@ const LogInFields = ({ loginForm, updateLogin }) => {
         }
       );
 
-      console.log("login successful:", response.data);
-      console.log("Token:", response.data.token);
+      console.log("Login response:", response.data);
 
       // Display success message from backend
       if (response.data.message) {
         successToast(response.data.message);
       }
 
-      // Redirect to home page after successful login
+      // Show OTP verification
       setTimeout(() => {
-        navigate("/");
-      }, 2000);
+        onShowOTP(loginForm.loginEmail, "login");
+      }, 1000);
     } catch (error) {
       if (error.response) {
         const errors = error.response.data.error;
@@ -52,12 +51,16 @@ const LogInFields = ({ loginForm, updateLogin }) => {
           "No response from server:",
           error.request
         );
+        errToast("Server is not responding. Please try again.");
       } else {
         console.error(
           "Request failed:",
           error.message
         );
+        errToast("An unexpected error occurred.");
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -118,9 +121,10 @@ const LogInFields = ({ loginForm, updateLogin }) => {
 
       <button
         type="submit"
-        className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-colors hover:bg-[#1F8A70]"
+        disabled={isLoading}
+        className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-all duration-200 hover:bg-[#1F8A70] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#14233B]"
       >
-        Log In
+        {isLoading ? "Sending code..." : "Log In"}
       </button>
     </form>
   );

@@ -9,6 +9,7 @@ const DesktopLogin = ({
   isSignUp,
   loginForm,
   updateLogin,
+  onShowOTP,
 }) => {
   const slide = "transition-transform duration-700 ease-in-out";
   const fade = "transition-opacity duration-700 ease-in-out";
@@ -35,6 +36,7 @@ const DesktopLogin = ({
         <LogInFields
           loginForm={loginForm}
           updateLogin={updateLogin}
+          onShowOTP={onShowOTP}
         />
       </div>
 
@@ -58,6 +60,7 @@ const DesktopLogin = ({
         <SignUpFields
           signUpForm={signUpForm}
           update={update}
+          onShowOTP={onShowOTP}
         />
       </div>
 
