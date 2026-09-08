@@ -1,11 +1,39 @@
-import React from "react";
 import { FiPlus, FiCheckCircle } from "react-icons/fi";
 import { HiOutlineDocumentText } from "react-icons/hi2";
+import { useNavigate } from "react-router";
+import axios from "axios";
 import BlurText from "../../utils/Blurtext";
 import SplitImage from "../../utils/SplitImage";
 import heroImage from "/hero-illustration.png"
 
 export default function Hero() {
+  const navigate = useNavigate();
+
+  const handleReportIssue = async () => {
+    try {
+      // Check if user is authenticated
+      const response = await axios.get(
+        "http://localhost:5000/api/auth/getuser",
+        {
+          withCredentials: true,
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        }
+      );
+
+      // If authenticated, redirect to dashboard
+      if (response.data.user) {
+        navigate("/citizen/dashboard");
+      } else {
+        navigate("/login");
+      }
+    } catch (error) {
+      // If not authenticated, redirect to login
+      navigate("/login");
+    }
+  };
   return (
     <section className="relative overflow-hidden bg-white pt-8">
       <div
@@ -98,6 +126,7 @@ export default function Hero() {
 
             {/* Primary Button */}
             <button
+              onClick={handleReportIssue}
               className="
                 inline-flex
                 items-center
