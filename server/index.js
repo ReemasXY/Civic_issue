@@ -6,7 +6,7 @@ import cors from "cors"
 import cookieParser from "cookie-parser"
 
 const app= express();
-const PORT = process.env.PORT
+const PORT = process.env.PORT;
 
 // Cleanup expired OTP records on server startup
 (async () => {

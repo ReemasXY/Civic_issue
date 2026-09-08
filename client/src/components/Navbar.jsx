@@ -96,9 +96,13 @@ export default function Navbar() {
               e.preventDefault();
               handleLinkClick("Home");
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2.5"
           >
-            <PiShieldCheckDuotone className="h-8 w-8 text-slate-800" />
+            {/* Two-Circle Logo */}
+            <div className="flex items-center -space-x-1.5">
+              <span className="h-5 w-5 rounded-full bg-[#14233B]" />
+              <span className="h-5 w-5 rounded-full bg-teal-600" />
+            </div>
 
             <span className="text-xl font-bold tracking-tight text-slate-900">
               Civic<span className="text-teal-600">Care</span>

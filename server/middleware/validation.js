@@ -13,8 +13,8 @@ export const registerValidator = [
     .trim()
     .notEmpty()
     .withMessage("Username is required")
-    .isLength({ min: 3, max: 50 })
-    .withMessage("Username must be between 3 and 50 characters"),
+    .isLength({ min: 8, max: 50 })
+    .withMessage("Username must be between 8 and 50 characters"),
 
   body("phone_number")
     .trim()
