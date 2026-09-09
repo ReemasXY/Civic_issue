@@ -74,6 +74,10 @@ export default function SeverityQuestionnaire({
   const handleNext = () => {
     if (selectedAnswer === null) return;
 
+    // =========================
+    // GO TO NEXT QUESTION
+    // =========================
+
     if (!isLastQuestion) {
       setCurrentQuestion(
         (prev) => prev + 1
@@ -92,11 +96,13 @@ export default function SeverityQuestionnaire({
 
     const finalAnswers = [...answers];
 
+    // Make sure the last selected answer
+    // is included in the final array.
     finalAnswers[currentQuestion] =
       selectedAnswer;
 
     // ========================================
-    // CALCULATE SCORE
+    // CALCULATE TOTAL SCORE
     // ========================================
 
     const totalScore =
@@ -106,11 +112,16 @@ export default function SeverityQuestionnaire({
         0
       );
 
+    // ========================================
+    // CALCULATE SEVERITY
+    // ========================================
+
     const severity =
       getSeverity(totalScore);
 
     // ========================================
-    // ONLY RETURN SCORE + SEVERITY
+    // ASSESSMENT RESULT
+    // ONLY SCORE + SEVERITY
     // ========================================
 
     const result = {
@@ -119,13 +130,35 @@ export default function SeverityQuestionnaire({
     };
 
     console.log(
-      "Severity Assessment:",
-      result
+      "========================================"
     );
 
+    console.log(
+      "SEVERITY ASSESSMENT"
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "Score:",
+      result.score
+    );
+
+    console.log(
+      "Severity:",
+      result.severity
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    // Save assessment result
     setAssessmentResult(result);
 
-    // Send only score and severity
+    // Send score + severity to parent
     onAssessmentComplete?.(result);
 
     // Show success modal
@@ -179,6 +212,8 @@ export default function SeverityQuestionnaire({
       setShowSuccess(false);
       setIsClosingSuccess(false);
 
+      // Send final assessment result
+      // to ReportIssue.jsx
       onComplete?.(assessmentResult);
     }, 300);
   };

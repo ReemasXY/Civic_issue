@@ -1,7 +1,17 @@
-import React, { useState, useRef } from "react";
-import { FiChevronDown, FiImage, FiMapPin } from "react-icons/fi";
+import React, {
+  useState,
+  useRef,
+} from "react";
+
+import {
+  FiChevronDown,
+  FiImage,
+  FiMapPin,
+} from "react-icons/fi";
+
 import LocationSearchInput from "../../../components/map/LocationSearchInput";
 import LocationPickerMap from "../../../components/map/LocationPickerMap";
+
 import axios from "axios";
 
 import Loading from "./Loading";
@@ -16,20 +26,36 @@ const CATEGORY_OPTIONS = [
   "Road Damage",
 ];
 
-export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
+export default function ReportIssue({
+  onSubmit,
+  nearbyIssues = [],
+}) {
   const [title, setTitle] = useState("");
-  const [category, setCategory] = useState("Pothole");
-  const [description, setDescription] = useState("");
-  const [selectedLocation, setSelectedLocation] = useState(null);
-  const [imageFile, setImageFile] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
+  const [category, setCategory] =
+    useState("Pothole");
+
+  const [description, setDescription] =
+    useState("");
+
+  const [selectedLocation, setSelectedLocation] =
+    useState(null);
+
+  const [imageFile, setImageFile] =
+    useState(null);
+
+  const [imagePreview, setImagePreview] =
+    useState(null);
 
   // =========================
   // VERIFICATION STATES
   // =========================
 
-  const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationResult, setVerificationResult] = useState(null);
+  const [isVerifying, setIsVerifying] =
+    useState(false);
+
+  const [verificationResult, setVerificationResult] =
+    useState(null);
+
   const [showVerificationModal, setShowVerificationModal] =
     useState(false);
 
@@ -37,10 +63,13 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   // SEVERITY QUESTIONNAIRE
   // =========================
 
-  const [showSeverityQuestionnaire, setShowSeverityQuestionnaire] =
-    useState(false);
+  const [
+    showSeverityQuestionnaire,
+    setShowSeverityQuestionnaire,
+  ] = useState(false);
 
-  const [assessmentResult, setAssessmentResult] = useState(null);
+  const [assessmentResult, setAssessmentResult] =
+    useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -48,32 +77,39 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   // NEARBY MARKERS
   // =========================
 
-  const nearbyMarkers = nearbyIssues.map((issue) => ({
-    id: issue.id,
-    lat: issue.latitude,
-    lon: issue.longitude,
-    label: issue.title,
-  }));
+  const nearbyMarkers =
+    nearbyIssues.map((issue) => ({
+      id: issue.id,
+      lat: issue.latitude,
+      lon: issue.longitude,
+      label: issue.title,
+    }));
 
   // =========================
   // IMAGE PICK
   // =========================
 
   const handleImagePick = (e) => {
-    const file = e.target.files?.[0];
+    const file =
+      e.target.files?.[0];
 
     if (!file) return;
 
     setImageFile(file);
-    setImagePreview(URL.createObjectURL(file));
 
-    // If a previous verification result exists,
-    // remove it when a new image is selected.
+    setImagePreview(
+      URL.createObjectURL(file)
+    );
+
+    // Remove previous verification
+    // result when a new image is selected.
     setVerificationResult(null);
+
     setShowVerificationModal(false);
 
     // Reset severity questionnaire
     setShowSeverityQuestionnaire(false);
+
     setAssessmentResult(null);
   };
 
@@ -105,18 +141,33 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
       setIsVerifying(true);
 
-      // Close any previous result modal
+      // Close previous results
       setShowVerificationModal(false);
       setShowSeverityQuestionnaire(false);
       setVerificationResult(null);
       setAssessmentResult(null);
 
-      console.log("========================================");
-      console.log("SUBMITTING ISSUE FOR IMAGE VERIFICATION");
-      console.log("========================================");
+      console.log(
+        "========================================"
+      );
 
-      console.log("Selected category:", category);
-      console.log("Image:", imageFile);
+      console.log(
+        "SUBMITTING ISSUE FOR IMAGE VERIFICATION"
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "Selected category:",
+        category
+      );
+
+      console.log(
+        "Image:",
+        imageFile
+      );
 
       // ========================================
       // CREATE FORMDATA
@@ -124,72 +175,111 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
       const formData = new FormData();
 
-      formData.append("category", category);
-      formData.append("image", imageFile);
+      formData.append(
+        "category",
+        category
+      );
+
+      formData.append(
+        "image",
+        imageFile
+      );
 
       // ========================================
       // SEND TO BACKEND
       // ========================================
 
-      const response = await axios.post(
-        "http://localhost:5000/api/reports/verify-image",
-        formData
+      const response =
+        await axios.post(
+          "http://localhost:5000/api/reports/verify-image",
+          formData
+        );
+
+      console.log(
+        "========================================"
       );
 
-      console.log("========================================");
-      console.log("AI VERIFICATION RESPONSE");
-      console.log("========================================");
+      console.log(
+        "AI VERIFICATION RESPONSE"
+      );
 
-      console.log("Full backend response:");
-      console.log(response.data);
+      console.log(
+        "========================================"
+      );
+
+      console.log(
+        "Full backend response:"
+      );
+
+      console.log(
+        response.data
+      );
 
       // ========================================
       // GET VERIFICATION RESULT
       // ========================================
 
-      const verification = response.data.verification;
+      const verification =
+        response.data.verification;
 
-      console.log("----------------------------------------");
-      console.log("STATUS:", verification.status);
+      console.log(
+        "----------------------------------------"
+      );
+
+      console.log(
+        "STATUS:",
+        verification.status
+      );
+
       console.log(
         "IS CIVIC ISSUE:",
         verification.isCivicIssue
       );
+
       console.log(
         "SELECTED CATEGORY:",
         verification.selectedCategory
       );
+
       console.log(
         "PREDICTED CATEGORY:",
         verification.predictedCategory
       );
+
       console.log(
         "CONFIDENCE:",
         `${verification.confidence}%`
       );
+
       console.log(
         "CIVIC SCORE:",
         `${verification.civicScore}%`
       );
+
       console.log(
         "NON-CIVIC SCORE:",
         `${verification.nonCivicScore}%`
       );
+
       console.log(
         "MESSAGE:",
         verification.message
       );
 
-      console.log("========================================");
+      console.log(
+        "========================================"
+      );
 
       // ========================================
       // SAVE VERIFICATION RESULT
       // ========================================
 
-      setVerificationResult(verification);
+      setVerificationResult(
+        verification
+      );
 
       // ========================================
-      // HIDE LOADING MODAL
+      // HIDE LOADING
       // ========================================
 
       setIsVerifying(false);
@@ -198,7 +288,9 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       // HANDLE SUCCESSFUL VERIFICATION
       // ========================================
 
-      if (verification.status === "VALID") {
+      if (
+        verification.status === "VALID"
+      ) {
         console.log(
           "✅ Image verified successfully."
         );
@@ -212,7 +304,10 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
          */
 
         setShowVerificationModal(false);
-        setShowSeverityQuestionnaire(true);
+
+        setShowSeverityQuestionnaire(
+          true
+        );
 
         return;
       }
@@ -222,7 +317,8 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       // ========================================
 
       if (
-        verification.status === "NOT_CIVIC_ISSUE"
+        verification.status ===
+        "NOT_CIVIC_ISSUE"
       ) {
         console.log(
           "❌ Image rejected: Not a civic issue."
@@ -238,7 +334,8 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       // ========================================
 
       if (
-        verification.status === "INVALID_CATEGORY"
+        verification.status ===
+        "INVALID_CATEGORY"
       ) {
         console.log(
           "❌ Image rejected: Wrong category."
@@ -250,7 +347,7 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       }
 
       // ========================================
-      // HANDLE OTHER VERIFICATION RESULTS
+      // HANDLE OTHER RESULTS
       // ========================================
 
       setShowVerificationModal(true);
@@ -268,7 +365,10 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
         "========================================"
       );
 
-      console.error("Error:", error);
+      console.error(
+        "Error:",
+        error
+      );
 
       // ========================================
       // HIDE LOADING
@@ -282,12 +382,15 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
       const errorResult = {
         status: "error",
+
         message:
           error.response?.data?.message ||
           "Unable to verify the image. Please try again.",
       };
 
-      setVerificationResult(errorResult);
+      setVerificationResult(
+        errorResult
+      );
 
       // ========================================
       // SHOW ERROR MODAL
@@ -305,10 +408,12 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
           "Backend response:",
           error.response.data
         );
+
       } else if (error.request) {
         console.error(
           "No response received from backend."
         );
+
       } else {
         console.error(
           "Request error:",
@@ -322,9 +427,10 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   // CLOSE VERIFICATION MODAL
   // =========================
 
-  const handleVerificationClose = () => {
-    setShowVerificationModal(false);
-  };
+  const handleVerificationClose =
+    () => {
+      setShowVerificationModal(false);
+    };
 
   // =========================
   // TRY AGAIN
@@ -333,7 +439,6 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   const handleTryAgain = () => {
     setShowVerificationModal(false);
 
-    // Open image picker again
     setTimeout(() => {
       fileInputRef.current?.click();
     }, 100);
@@ -343,118 +448,200 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   // CANCEL QUESTIONNAIRE
   // =========================
 
-  const handleQuestionnaireCancel = () => {
-    setShowSeverityQuestionnaire(false);
-  };
+  const handleQuestionnaireCancel =
+    () => {
+      setShowSeverityQuestionnaire(
+        false
+      );
+    };
 
   // =========================
   // ASSESSMENT COMPLETE
   // =========================
 
-  const handleAssessmentComplete = (result) => {
-    console.log(
-      "========================================"
-    );
+  const handleAssessmentComplete =
+    (result) => {
+      console.log(
+        "========================================"
+      );
 
-    console.log(
-      "SEVERITY ASSESSMENT RESULT"
-    );
+      console.log(
+        "SEVERITY ASSESSMENT COMPLETED"
+      );
 
-    console.log(
-      "========================================"
-    );
+      console.log(
+        "========================================"
+      );
 
-    console.log("Assessment:", result);
+      console.log(
+        "Severity Score:",
+        result.score
+      );
 
-    setAssessmentResult(result);
-  };
+      console.log(
+        "Severity Level:",
+        result.severity
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      setAssessmentResult(result);
+    };
 
   // =========================
   // QUESTIONNAIRE DONE
   // =========================
 
-  const handleQuestionnaireComplete = (result) => {
-    console.log(
-      "========================================"
-    );
+  const handleQuestionnaireComplete =
+    (result) => {
+      console.log(
+        "========================================"
+      );
 
-    console.log(
-      "COMPLETE REPORT READY"
-    );
+      console.log(
+        "          COMPLETE REPORT"
+      );
 
-    console.log(
-      "========================================"
-    );
+      console.log(
+        "========================================"
+      );
 
-    console.log("Title:", title);
-    console.log("Category:", category);
-    console.log("Description:", description);
-    console.log(
-      "Location:",
-      selectedLocation
-    );
-    console.log(
-      "Image:",
-      imageFile
-    );
-    console.log(
-      "Verification:",
-      verificationResult
-    );
-    console.log(
-      "Assessment:",
-      result
-    );
+      // =========================
+      // TITLE
+      // =========================
 
-    // ========================================
-    // COMPLETE REPORT DATA
-    // ========================================
+      console.log(
+        "Title:",
+        title
+      );
 
-    const completeReport = {
-      title,
-      category,
-      description,
+      // =========================
+      // DESCRIPTION
+      // =========================
 
-      location: selectedLocation,
+      console.log(
+        "Description:",
+        description
+      );
 
-      image: imageFile,
+      // =========================
+      // CATEGORY
+      // =========================
 
-      verification: verificationResult,
+      console.log(
+        "Category:",
+        category
+      );
 
-      assessment: result,
+      // =========================
+      // LOCATION
+      // =========================
+
+      console.log(
+        "Location:",
+        selectedLocation
+      );
+
+      // =========================
+      // IMAGE
+      // =========================
+
+      console.log(
+        "Image:",
+        imageFile
+      );
+
+      // =========================
+      // VERIFICATION
+      // =========================
+
+      console.log(
+        "Verification Information:",
+        verificationResult
+      );
+
+      // =========================
+      // SEVERITY SCORE
+      // =========================
+
+      console.log(
+        "Severity Score:",
+        result?.score
+      );
+
+      // =========================
+      // SEVERITY LEVEL
+      // =========================
+
+      console.log(
+        "Severity Level:",
+        result?.severity
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      // ========================================
+      // COMPLETE REPORT OBJECT
+      // ========================================
+
+      const completeReport = {
+        title,
+        description,
+        category,
+
+        location: selectedLocation,
+
+        image: imageFile,
+
+        verification:
+          verificationResult,
+
+        severityScore:
+          result?.score,
+
+        severityLevel:
+          result?.severity,
+      };
+
+      console.log(
+        "COMPLETE REPORT OBJECT:"
+      );
+
+      console.log(
+        completeReport
+      );
+
+      console.log(
+        "========================================"
+      );
+
+      // ========================================
+      // CLOSE QUESTIONNAIRE
+      // ========================================
+
+      setShowSeverityQuestionnaire(
+        false
+      );
+
+      // ========================================
+      // SEND REPORT TO PARENT
+      // ========================================
+
+      if (onSubmit) {
+        onSubmit(
+          completeReport
+        );
+      }
+
+      /*
+       * Later you can send completeReport
+       * directly to your backend.
+       */
     };
-
-    console.log(
-      "Complete Report:",
-      completeReport
-    );
-
-    // ========================================
-    // CLOSE QUESTIONNAIRE
-    // ========================================
-
-    setShowSeverityQuestionnaire(false);
-
-    // ========================================
-    // SEND REPORT TO PARENT
-    // ========================================
-
-    if (onSubmit) {
-      onSubmit(completeReport);
-    }
-
-    /*
-     * Later you can send completeReport
-     * directly to your backend here.
-     *
-     * Example:
-     *
-     * await axios.post(
-     *   "http://localhost:5000/api/reports",
-     *   completeReport
-     * );
-     */
-  };
 
   return (
     <>
@@ -492,14 +679,19 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
                 {/* Category */}
 
-                <Field label="Category" required>
+                <Field
+                  label="Category"
+                  required
+                >
 
                   <div className="relative">
 
                     <select
                       value={category}
                       onChange={(e) =>
-                        setCategory(e.target.value)
+                        setCategory(
+                          e.target.value
+                        )
                       }
                       required
                       className="w-full appearance-none border border-slate-300 rounded-xl px-4 py-2.5 pr-10 text-sm text-slate-800 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-colors cursor-pointer"
@@ -529,13 +721,18 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
                 {/* Issue Title */}
 
-                <Field label="Issue Title" required>
+                <Field
+                  label="Issue Title"
+                  required
+                >
 
                   <input
                     type="text"
                     value={title}
                     onChange={(e) =>
-                      setTitle(e.target.value)
+                      setTitle(
+                        e.target.value
+                      )
                     }
                     placeholder="e.g. Large pothole near the main road"
                     required
@@ -546,12 +743,17 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
                 {/* Description */}
 
-                <Field label="Description" required>
+                <Field
+                  label="Description"
+                  required
+                >
 
                   <textarea
                     value={description}
                     onChange={(e) =>
-                      setDescription(e.target.value)
+                      setDescription(
+                        e.target.value
+                      )
                     }
                     placeholder="Describe the issue in detail..."
                     rows={6}
@@ -563,11 +765,18 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
                 {/* Location */}
 
-                <Field label="Location" required>
+                <Field
+                  label="Location"
+                  required
+                >
 
                   <LocationSearchInput
-                    value={selectedLocation}
-                    onChange={setSelectedLocation}
+                    value={
+                      selectedLocation
+                    }
+                    onChange={
+                      setSelectedLocation
+                    }
                     variant="inline"
                   />
 
@@ -583,7 +792,10 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
                 {/* IMAGE */}
 
-                <Field label="Issue Image" required>
+                <Field
+                  label="Issue Image"
+                  required
+                >
 
                   <div className="rounded-xl overflow-hidden border border-slate-200 bg-slate-50 h-64 flex items-center justify-center">
 
@@ -601,7 +813,9 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
                         <div className="w-14 h-14 rounded-full bg-white border border-slate-200 flex items-center justify-center">
 
-                          <FiImage size={28} />
+                          <FiImage
+                            size={28}
+                          />
 
                         </div>
 
@@ -627,7 +841,9 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
                     ref={fileInputRef}
                     type="file"
                     accept="image/*"
-                    onChange={handleImagePick}
+                    onChange={
+                      handleImagePick
+                    }
                     required
                     className="hidden"
                   />
@@ -672,10 +888,16 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
                   <div className="rounded-xl overflow-hidden border border-slate-200 shadow-sm">
 
                     <LocationPickerMap
-                      value={selectedLocation}
-                      onChange={setSelectedLocation}
+                      value={
+                        selectedLocation
+                      }
+                      onChange={
+                        setSelectedLocation
+                      }
                       height="h-80"
-                      nearbyMarkers={nearbyMarkers}
+                      nearbyMarkers={
+                        nearbyMarkers
+                      }
                     />
 
                   </div>
@@ -689,7 +911,9 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
                       </p>
 
                       <p className="text-sm text-slate-700 font-medium truncate">
-                        {selectedLocation.label}
+                        {
+                          selectedLocation.label
+                        }
                       </p>
 
                     </div>
@@ -708,9 +932,13 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
               <button
                 type="submit"
-                disabled={!isFormValid || isVerifying}
+                disabled={
+                  !isFormValid ||
+                  isVerifying
+                }
                 className={`px-8 py-3 rounded-xl text-sm font-semibold transition-all shadow-sm ${
-                  isFormValid && !isVerifying
+                  isFormValid &&
+                  !isVerifying
                     ? "text-white bg-slate-800 hover:bg-slate-900 cursor-pointer"
                     : "text-slate-400 bg-slate-200 cursor-not-allowed"
                 }`}
@@ -737,7 +965,9 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       ========================================== */}
 
       {isVerifying && (
-        <Loading category={category} />
+        <Loading
+          category={category}
+        />
       )}
 
       {/* =========================================
@@ -746,10 +976,18 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
       {showVerificationModal && (
         <VerificationModal
-          isOpen={showVerificationModal}
-          onClose={handleVerificationClose}
-          onTryAgain={handleTryAgain}
-          verificationResult={verificationResult}
+          isOpen={
+            showVerificationModal
+          }
+          onClose={
+            handleVerificationClose
+          }
+          onTryAgain={
+            handleTryAgain
+          }
+          verificationResult={
+            verificationResult
+          }
           category={category}
         />
       )}
@@ -780,7 +1018,6 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   );
 }
 
-
 /* =========================
    FIELD COMPONENT
 ========================= */
@@ -797,7 +1034,11 @@ function Field({
 
         {label}
 
-  
+        {required && (
+          <span className="text-red-500 ml-1">
+            *
+          </span>
+        )}
 
       </label>
 
