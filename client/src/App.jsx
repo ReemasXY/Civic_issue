@@ -6,7 +6,7 @@ import Layout from "./components/Layout";
 import Login from "./pages/Login&Register/Login";
 import CitizenLayout from "./pages/Citizen/CitizenLayout";
 import Dashboard from "./pages/Citizen/Dashboard";
-import ReportIssue from "./pages/Citizen/ReportIssue";
+import ReportIssue from "./pages/Citizen/ReportIssue/ReportIssue";
 
 function App() {
   const router = createBrowserRouter([
