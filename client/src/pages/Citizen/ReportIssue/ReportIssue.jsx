@@ -1034,11 +1034,7 @@ function Field({
 
         {label}
 
-        {required && (
-          <span className="text-red-500 ml-1">
-            *
-          </span>
-        )}
+      
 
       </label>
 
