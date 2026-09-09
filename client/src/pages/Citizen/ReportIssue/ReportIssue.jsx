@@ -6,6 +6,7 @@ import axios from "axios";
 
 import Loading from "./Loading";
 import VerificationModal from "./VerificationModal";
+import SeverityQuestionnaire from "../ReportIssue/SeverityQuestionare";
 
 const CATEGORY_OPTIONS = [
   "Pothole",
@@ -31,6 +32,15 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
   const [verificationResult, setVerificationResult] = useState(null);
   const [showVerificationModal, setShowVerificationModal] =
     useState(false);
+
+  // =========================
+  // SEVERITY QUESTIONNAIRE
+  // =========================
+
+  const [showSeverityQuestionnaire, setShowSeverityQuestionnaire] =
+    useState(false);
+
+  const [assessmentResult, setAssessmentResult] = useState(null);
 
   const fileInputRef = useRef(null);
 
@@ -61,6 +71,10 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
     // remove it when a new image is selected.
     setVerificationResult(null);
     setShowVerificationModal(false);
+
+    // Reset severity questionnaire
+    setShowSeverityQuestionnaire(false);
+    setAssessmentResult(null);
   };
 
   // =========================
@@ -93,7 +107,9 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
 
       // Close any previous result modal
       setShowVerificationModal(false);
+      setShowSeverityQuestionnaire(false);
       setVerificationResult(null);
+      setAssessmentResult(null);
 
       console.log("========================================");
       console.log("SUBMITTING ISSUE FOR IMAGE VERIFICATION");
@@ -167,7 +183,7 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       console.log("========================================");
 
       // ========================================
-      // SAVE RESULT
+      // SAVE VERIFICATION RESULT
       // ========================================
 
       setVerificationResult(verification);
@@ -179,13 +195,7 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
       setIsVerifying(false);
 
       // ========================================
-      // SHOW RESULT MODAL
-      // ========================================
-
-      setShowVerificationModal(true);
-
-      // ========================================
-      // HANDLE SUCCESS
+      // HANDLE SUCCESSFUL VERIFICATION
       // ========================================
 
       if (verification.status === "VALID") {
@@ -194,14 +204,17 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
         );
 
         /*
-         * IMPORTANT:
+         * Image verification is successful.
          *
-         * Do NOT submit the complete report here yet
-         * unless you want the report to be saved
-         * immediately after image verification.
+         * Do not submit the report yet.
          *
-         * The VerificationModal will show first.
+         * First show the severity questionnaire.
          */
+
+        setShowVerificationModal(false);
+        setShowSeverityQuestionnaire(true);
+
+        return;
       }
 
       // ========================================
@@ -214,6 +227,10 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
         console.log(
           "❌ Image rejected: Not a civic issue."
         );
+
+        setShowVerificationModal(true);
+
+        return;
       }
 
       // ========================================
@@ -226,7 +243,17 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
         console.log(
           "❌ Image rejected: Wrong category."
         );
+
+        setShowVerificationModal(true);
+
+        return;
       }
+
+      // ========================================
+      // HANDLE OTHER VERIFICATION RESULTS
+      // ========================================
+
+      setShowVerificationModal(true);
 
     } catch (error) {
       console.error(
@@ -310,6 +337,123 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
     setTimeout(() => {
       fileInputRef.current?.click();
     }, 100);
+  };
+
+  // =========================
+  // CANCEL QUESTIONNAIRE
+  // =========================
+
+  const handleQuestionnaireCancel = () => {
+    setShowSeverityQuestionnaire(false);
+  };
+
+  // =========================
+  // ASSESSMENT COMPLETE
+  // =========================
+
+  const handleAssessmentComplete = (result) => {
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "SEVERITY ASSESSMENT RESULT"
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    console.log("Assessment:", result);
+
+    setAssessmentResult(result);
+  };
+
+  // =========================
+  // QUESTIONNAIRE DONE
+  // =========================
+
+  const handleQuestionnaireComplete = (result) => {
+    console.log(
+      "========================================"
+    );
+
+    console.log(
+      "COMPLETE REPORT READY"
+    );
+
+    console.log(
+      "========================================"
+    );
+
+    console.log("Title:", title);
+    console.log("Category:", category);
+    console.log("Description:", description);
+    console.log(
+      "Location:",
+      selectedLocation
+    );
+    console.log(
+      "Image:",
+      imageFile
+    );
+    console.log(
+      "Verification:",
+      verificationResult
+    );
+    console.log(
+      "Assessment:",
+      result
+    );
+
+    // ========================================
+    // COMPLETE REPORT DATA
+    // ========================================
+
+    const completeReport = {
+      title,
+      category,
+      description,
+
+      location: selectedLocation,
+
+      image: imageFile,
+
+      verification: verificationResult,
+
+      assessment: result,
+    };
+
+    console.log(
+      "Complete Report:",
+      completeReport
+    );
+
+    // ========================================
+    // CLOSE QUESTIONNAIRE
+    // ========================================
+
+    setShowSeverityQuestionnaire(false);
+
+    // ========================================
+    // SEND REPORT TO PARENT
+    // ========================================
+
+    if (onSubmit) {
+      onSubmit(completeReport);
+    }
+
+    /*
+     * Later you can send completeReport
+     * directly to your backend here.
+     *
+     * Example:
+     *
+     * await axios.post(
+     *   "http://localhost:5000/api/reports",
+     *   completeReport
+     * );
+     */
   };
 
   return (
@@ -571,11 +715,13 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
                     : "text-slate-400 bg-slate-200 cursor-not-allowed"
                 }`}
               >
+
                 {isVerifying
                   ? "Verifying Image..."
                   : isFormValid
                   ? "Submit Issue Report"
                   : "Complete All Fields"}
+
               </button>
 
             </div>
@@ -608,6 +754,28 @@ export default function ReportIssue({ onSubmit, nearbyIssues = [] }) {
         />
       )}
 
+      {/* =========================================
+          SEVERITY QUESTIONNAIRE
+      ========================================== */}
+
+      {showSeverityQuestionnaire && (
+        <SeverityQuestionnaire
+          category={category}
+
+          onCancel={
+            handleQuestionnaireCancel
+          }
+
+          onAssessmentComplete={
+            handleAssessmentComplete
+          }
+
+          onComplete={
+            handleQuestionnaireComplete
+          }
+        />
+      )}
+
     </>
   );
 }
@@ -629,11 +797,7 @@ function Field({
 
         {label}
 
-        {required && (
-          <span className="text-red-500 ml-1">
-            *
-          </span>
-        )}
+  
 
       </label>
 
