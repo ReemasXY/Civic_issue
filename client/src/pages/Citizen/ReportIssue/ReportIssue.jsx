@@ -13,10 +13,13 @@ import LocationSearchInput from "../../../components/map/LocationSearchInput";
 import LocationPickerMap from "../../../components/map/LocationPickerMap";
 
 import axios from "axios";
+import { useNavigate } from "react-router";
 
 import Loading from "./Loading";
 import VerificationModal from "./VerificationModal";
 import SeverityQuestionnaire from "../ReportIssue/SeverityQuestionare";
+import SubmittingModal from "./SubmittingModal";
+import SuccessModal from "./SuccessModal";
 
 const CATEGORY_OPTIONS = [
   "Pothole",
@@ -71,7 +74,18 @@ export default function ReportIssue({
   const [assessmentResult, setAssessmentResult] =
     useState(null);
 
+  // =========================
+  // SUBMISSION STATES
+  // =========================
+
+  const [isSubmitting, setIsSubmitting] =
+    useState(false);
+
+  const [showSuccessModal, setShowSuccessModal] =
+    useState(false);
+
   const fileInputRef = useRef(null);
+  const navigate = useNavigate();
 
   // =========================
   // NEARBY MARKERS
@@ -495,7 +509,7 @@ export default function ReportIssue({
   // =========================
 
   const handleQuestionnaireComplete =
-    (result) => {
+    async (result) => {
       console.log(
         "========================================"
       );
@@ -585,41 +599,6 @@ export default function ReportIssue({
       );
 
       // ========================================
-      // COMPLETE REPORT OBJECT
-      // ========================================
-
-      const completeReport = {
-        title,
-        description,
-        category,
-
-        location: selectedLocation,
-
-        image: imageFile,
-
-        verification:
-          verificationResult,
-
-        severityScore:
-          result?.score,
-
-        severityLevel:
-          result?.severity,
-      };
-
-      console.log(
-        "COMPLETE REPORT OBJECT:"
-      );
-
-      console.log(
-        completeReport
-      );
-
-      console.log(
-        "========================================"
-      );
-
-      // ========================================
       // CLOSE QUESTIONNAIRE
       // ========================================
 
@@ -628,19 +607,104 @@ export default function ReportIssue({
       );
 
       // ========================================
-      // SEND REPORT TO PARENT
+      // SUBMIT TO BACKEND
       // ========================================
 
-      if (onSubmit) {
-        onSubmit(
-          completeReport
-        );
-      }
+      try {
+        // Show submitting modal
+        setIsSubmitting(true);
 
-      /*
-       * Later you can send completeReport
-       * directly to your backend.
-       */
+        // Build FormData
+        const formData = new FormData();
+        formData.append("title", title);
+        formData.append("description", description);
+        formData.append("category", category);
+        formData.append("image", imageFile);
+
+        if (selectedLocation?.label) {
+          formData.append("locationShortLabel", selectedLocation.label);
+        }
+
+        if (selectedLocation?.fullLabel) {
+          formData.append("locationFullLabel", selectedLocation.fullLabel);
+        }
+
+        if (selectedLocation?.lat) {
+          formData.append("latitude", selectedLocation.lat);
+        }
+
+        if (selectedLocation?.lon) {
+          formData.append("longitude", selectedLocation.lon);
+        }
+
+        if (result?.score !== undefined && result?.score !== null) {
+          formData.append("severityScore", result.score);
+        }
+
+        if (result?.severity) {
+          formData.append("severityLevel", result.severity);
+        }
+
+        console.log("Submitting report to backend...");
+
+        // Submit to backend
+        const response = await axios.post(
+          "http://localhost:5000/api/reports/create-report",
+          formData,
+          {
+            withCredentials: true,
+          }
+        );
+
+        console.log("Report submitted successfully:", response.data);
+
+        // Hide submitting modal
+        setIsSubmitting(false);
+
+        // Reset form
+        setTitle("");
+        setDescription("");
+        setCategory("Pothole");
+        setSelectedLocation(null);
+        setImageFile(null);
+        setImagePreview(null);
+        setVerificationResult(null);
+        setAssessmentResult(null);
+
+        // Show success modal
+        setShowSuccessModal(true);
+
+        // Call parent's onSubmit if provided
+        if (onSubmit) {
+          onSubmit({
+            title,
+            description,
+            category,
+            location: selectedLocation,
+            image: imageFile,
+            verification: verificationResult,
+            severityScore: result?.score,
+            severityLevel: result?.severity,
+          });
+        }
+
+      } catch (error) {
+        console.error("Error submitting report:", error);
+
+        setIsSubmitting(false);
+
+        const errorMessage = error.response?.data?.error?.[0]
+          || error.response?.data?.message
+          || "Failed to submit report. Please try again.";
+
+        // Show error in verification modal
+        setVerificationResult({
+          status: "error",
+          message: errorMessage,
+        });
+
+        setShowVerificationModal(true);
+      }
     };
 
   return (
@@ -1011,6 +1075,26 @@ export default function ReportIssue({
           onComplete={
             handleQuestionnaireComplete
           }
+        />
+      )}
+
+      {/* =========================================
+          SUBMITTING LOADER MODAL
+      ========================================== */}
+
+      {isSubmitting && <SubmittingModal />}
+
+      {/* =========================================
+          SUCCESS MODAL
+      ========================================== */}
+
+      {showSuccessModal && (
+        <SuccessModal
+          isOpen={showSuccessModal}
+          onDone={() => {
+            setShowSuccessModal(false);
+            navigate("/citizen/dashboard");
+          }}
         />
       )}
 

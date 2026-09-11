@@ -78,6 +78,11 @@ export default function Navbar() {
       setIsLoggedIn(false);
       setIsOpen(false);
 
+      // Clear stored user info
+      localStorage.removeItem("user_id");
+      localStorage.removeItem("role");
+      localStorage.removeItem("username");
+
       navigate("/");
     } catch (error) {
       console.error("Logout failed:", error);

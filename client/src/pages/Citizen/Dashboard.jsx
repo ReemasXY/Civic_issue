@@ -1,4 +1,3 @@
-import React from "react";
 import {
   FiFileText,
   FiClock,
@@ -9,6 +8,9 @@ import {
 } from "react-icons/fi";
 
 export default function Dashboard() {
+  const 
+  username = localStorage.getItem("username") || "User";
+
   // Mock data - replace with actual API calls
 const stats = [
   {
@@ -89,7 +91,7 @@ const stats = [
       <header className="mb-8 flex min-w-0 flex-col items-start justify-between gap-4 lg:flex-row lg:items-center">
         <div className="min-w-0">
           <h1 className="mb-1 text-2xl font-bold text-slate-900 sm:text-3xl">
-            Welcome, Sameer 👋
+            Welcome, {username} 
           </h1>
 
           <p className="text-sm text-slate-500">
@@ -110,11 +112,11 @@ const stats = [
           {/* User Menu */}
           <div className="flex cursor-pointer items-center gap-3 rounded-full border border-teal-100 bg-white py-2 pl-2 pr-3 shadow-[0_4px_15px_rgba(15,118,110,0.08)] transition-all duration-200 hover:border-teal-300 hover:shadow-[0_6px_20px_rgba(15,118,110,0.14)] sm:pr-4">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-teal-600 to-teal-500 text-sm font-semibold text-white">
-              S
+              {username.charAt(0).toUpperCase()}
             </div>
 
             <span className="hidden text-sm font-medium text-slate-900 sm:block">
-              Sameer
+              {username}
             </span>
 
             <svg

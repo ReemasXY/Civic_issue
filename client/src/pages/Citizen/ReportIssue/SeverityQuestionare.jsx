@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import { FiCheck } from "react-icons/fi";
 
 import QUESTIONS from "./SeverityQuestions.js";
-import SuccessModal from "./SuccessModal";
 
 const getSeverity = (score) => {
   if (score <= 4) return "Low";
@@ -29,12 +28,6 @@ export default function SeverityQuestionnaire({
 
   const [selectedAnswer, setSelectedAnswer] =
     useState(null);
-
-  const [showSuccess, setShowSuccess] =
-    useState(false);
-
-  const [isClosingSuccess, setIsClosingSuccess] =
-    useState(false);
 
   // Controls questionnaire closing animation
   const [isClosingQuestionnaire, setIsClosingQuestionnaire] =
@@ -161,8 +154,8 @@ export default function SeverityQuestionnaire({
     // Send score + severity to parent
     onAssessmentComplete?.(result);
 
-    // Show success modal
-    setShowSuccess(true);
+    // Proceed to submission in parent ReportIssue.jsx
+    onComplete?.(result);
   };
 
   // =========================
@@ -201,23 +194,6 @@ export default function SeverityQuestionnaire({
     }, 300);
   };
 
-  // =========================
-  // SUCCESS DONE
-  // =========================
-
-  const handleSuccessDone = () => {
-    setIsClosingSuccess(true);
-
-    setTimeout(() => {
-      setShowSuccess(false);
-      setIsClosingSuccess(false);
-
-      // Send final assessment result
-      // to ReportIssue.jsx
-      onComplete?.(assessmentResult);
-    }, 300);
-  };
-
   return (
     <div
       className={`
@@ -237,25 +213,24 @@ export default function SeverityQuestionnaire({
           QUESTIONNAIRE
       ========================================== */}
 
-      {!showSuccess && (
-        <div
-          className={`
-            relative
-            w-full
-            max-w-[450px]
-            rounded-2xl
-            border border-slate-200
-            bg-white
-            p-4
-            shadow-[0_20px_60px_rgba(15,23,42,0.25)]
+      <div
+        className={`
+          relative
+          w-full
+          max-w-[450px]
+          rounded-2xl
+          border border-slate-200
+          bg-white
+          p-4
+          shadow-[0_20px_60px_rgba(15,23,42,0.25)]
 
-            ${
-              isClosingQuestionnaire
-                ? "animate-[questionnaireHide_0.3s_ease-in]"
-                : "animate-[questionnaireShow_0.3s_ease-out]"
-            }
-          `}
-        >
+          ${
+            isClosingQuestionnaire
+              ? "animate-[questionnaireHide_0.3s_ease-in]"
+              : "animate-[questionnaireShow_0.3s_ease-out]"
+          }
+        `}
+      >
           {/* =====================================
               HEADER
           ====================================== */}
@@ -474,17 +449,7 @@ export default function SeverityQuestionnaire({
             </button>
           </div>
         </div>
-      )}
 
-      {/* =========================================
-          SUCCESS MODAL
-      ========================================== */}
-
-      <SuccessModal
-        isOpen={showSuccess}
-        isClosing={isClosingSuccess}
-        onDone={handleSuccessDone}
-      />
     </div>
   );
 }

@@ -111,6 +111,13 @@ const OTPVerification = ({ email, purpose = "registration" }) => {
         successToast(response.data.message);
       }
 
+      // Store user info in localStorage
+      if (response.data.user) {
+        localStorage.setItem("user_id", response.data.user.user_id);
+        localStorage.setItem("role", response.data.user.role);
+        localStorage.setItem("username", response.data.user.username);
+      }
+
       setTimeout(() => {
         navigate("/");
       }, 1500);

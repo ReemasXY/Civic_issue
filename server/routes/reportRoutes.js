@@ -6,9 +6,37 @@ import {
     verifyImage,
 } from "../utils/verifyImage.js";
 
+import { createReport } from "../controllers/reportControllers.js";
+
+import { checkToken } from "../middleware/checkToken.js";
+
 const router =
     express.Router();
 
+
+/*
+ * ============================================================
+ * ROUTE: CREATE REPORT
+ * ============================================================
+ * POST /api/reports/create-report
+ * Creates a new civic issue report with image and severity data
+ */
+
+router.post(
+    "/create-report",
+    checkToken,
+    upload.single("image"),
+    createReport
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: VERIFY IMAGE
+ * ============================================================
+ * POST /api/reports/verify-image
+ * Verifies if an uploaded image is a valid civic issue
+ */
 
 router.post(
     "/verify-image",

@@ -6,11 +6,15 @@ import reportRoutes from "./routes/reportRoutes.js";
 
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import path from "path";
+import { fileURLToPath } from "url";
 
 import {
   loadImageModel,
 } from "./utils/verifyImage.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 
@@ -40,6 +44,13 @@ app.use(
 app.use(express.json());
 
 app.use(cookieParser());
+
+// make the images of the uploads folder accessible from the frontend
+
+app.use(
+  "/uploads",
+  express.static(path.join(__dirname, "uploads"))
+);
 
 
 /*

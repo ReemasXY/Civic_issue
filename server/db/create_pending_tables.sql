@@ -25,13 +25,4 @@ CREATE TABLE IF NOT EXISTS pending_logins (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for faster lookups
-CREATE INDEX IF NOT EXISTS idx_pending_registrations_email ON pending_registrations(email);
-CREATE INDEX IF NOT EXISTS idx_pending_registrations_otp_expires ON pending_registrations(otp_expires_at);
 
-CREATE INDEX IF NOT EXISTS idx_pending_logins_email ON pending_logins(email);
-CREATE INDEX IF NOT EXISTS idx_pending_logins_user_id ON pending_logins(user_id);
-CREATE INDEX IF NOT EXISTS idx_pending_logins_otp_expires ON pending_logins(otp_expires_at);
-
--- Success message
-SELECT 'Pending tables created successfully!' as status;
