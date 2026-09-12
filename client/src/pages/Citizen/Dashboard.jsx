@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import axios from "axios";
+import ComplaintDetail from "./MyComplaints/ComplaintDetail";
 
 export default function Dashboard() {
   const username = localStorage.getItem("username") || "User";
@@ -68,6 +69,9 @@ export default function Dashboard() {
   const [totalComplaints, setTotalComplaints] = useState(0);
   const [recentComplaints, setRecentComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [allComplaints, setAllComplaints] = useState([]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -136,6 +140,9 @@ export default function Dashboard() {
               value: verified,
             },
           ]);
+
+          // Store all report data for detailed view
+          setAllComplaints(recentReports);
 
           const formattedReports = recentReports.map((report) => ({
             id: report.report_id,
@@ -208,6 +215,30 @@ export default function Dashboard() {
     "#EAB308", // Yellow - Pending
     "#3B82F6", // Blue - Verified
   ];
+
+  const handleViewDetails = (complaintId) => {
+    const complaint = allComplaints.find((c) => c.report_id === complaintId);
+    if (complaint) {
+      setSelectedComplaint(complaint);
+      setShowDetail(true);
+    } else {
+      console.error("Complaint not found:", complaintId);
+    }
+  };
+
+  const handleBackToList = () => {
+    setShowDetail(false);
+    setSelectedComplaint(null);
+  };
+
+  if (showDetail && selectedComplaint) {
+    return (
+      <ComplaintDetail
+        complaint={selectedComplaint}
+        onBack={handleBackToList}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8">
@@ -340,7 +371,15 @@ export default function Dashboard() {
                 </div>
 
                 <div className="flex flex-shrink-0 items-center">
-                  <button className="cursor-pointer whitespace-nowrap rounded-lg border border-teal-100 bg-white px-5 py-2.5 text-sm font-medium text-slate-900 shadow-[0_3px_10px_rgba(15,118,110,0.06)] transition-all duration-200 hover:border-teal-600 hover:bg-teal-600 hover:text-white hover:shadow-[0_6px_16px_rgba(15,118,110,0.18)]">
+                  <button
+                    onClick={() => {
+                      const fullComplaint = allComplaints.find((c) => c.report_id === complaint.id);
+                      if (fullComplaint) {
+                        setSelectedComplaint(fullComplaint);
+                        setShowDetail(true);
+                      }
+                    }}
+                    className="cursor-pointer whitespace-nowrap rounded-lg border border-teal-100 bg-white px-5 py-2.5 text-sm font-medium text-slate-900 shadow-[0_3px_10px_rgba(15,118,110,0.06)] transition-all duration-200 hover:border-teal-600 hover:bg-teal-600 hover:text-white hover:shadow-[0_6px_16px_rgba(15,118,110,0.18)]">
                     View Details
                   </button>
                 </div>

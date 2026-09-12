@@ -45,9 +45,12 @@ export const getDashboardData = async (req, res) => {
       SELECT
         report_id,
         title,
+        description,
         category,
         location_short_label,
         location_full_label,
+        latitude,
+        longitude,
         image_url,
         status,
         severity_level,

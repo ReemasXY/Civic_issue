@@ -3,6 +3,7 @@ import axios from "axios";
 import ComplaintsFilters from "./ComplaintsFilters";
 import ComplaintCard from "./ComplaintCard";
 import EmptyState from "./EmptyState";
+import ComplaintDetail from "./ComplaintDetail";
 
 export default function MyComplaints() {
   const [complaints, setComplaints] = useState([]);
@@ -11,6 +12,8 @@ export default function MyComplaints() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [severityFilter, setSeverityFilter] = useState("all");
+  const [selectedComplaint, setSelectedComplaint] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
 
   useEffect(() => {
     const fetchComplaints = async () => {
@@ -57,12 +60,26 @@ export default function MyComplaints() {
   }, [statusFilter, categoryFilter, severityFilter, complaints]);
 
   const handleViewDetails = (complaint) => {
-    // TODO: Implement view details functionality
-    console.log("View details for complaint:", complaint.report_id);
+    setSelectedComplaint(complaint);
+    setShowDetail(true);
   };
 
+  const handleBackToList = () => {
+    setShowDetail(false);
+    setSelectedComplaint(null);
+  };
+
+  if (showDetail && selectedComplaint) {
+    return (
+      <ComplaintDetail
+        complaint={selectedComplaint}
+        onBack={handleBackToList}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full bg-gray-50 p-6">
+    <div className="min-h-screen w-full bg-white p-6">
       {/* Header */}
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold text-slate-900">
