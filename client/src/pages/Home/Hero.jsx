@@ -23,9 +23,15 @@ export default function Hero() {
         }
       );
 
-      // If authenticated, redirect to dashboard
+      // If authenticated, redirect based on role
       if (response.data.user) {
-        navigate("/citizen/dashboard");
+        const userRole = response.data.user.role;
+
+        if (userRole === "officer") {
+          navigate("/officer/dashboard");
+        } else {
+          navigate("/citizen/dashboard");
+        }
       } else {
         navigate("/login");
       }

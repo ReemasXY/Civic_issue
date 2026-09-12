@@ -21,3 +21,5 @@ CREATE TABLE users (
 
 SELECT * FROM users;
 
+ALTER TABLE users
+ADD COLUMN department VARCHAR(100) NOT NULL DEFAULT 'none';

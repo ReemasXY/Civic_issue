@@ -6,14 +6,14 @@ import {
   FiShield,
 } from "react-icons/fi";
 import axios from "axios";
-import ComplaintDetail from "./MyComplaints/ComplaintDetail";
 import DashboardHeader from "../../components/Dashboard/DashboardHeader";
 import StatsCard from "../../components/Dashboard/StatsCard";
 import RecentComplaintsList from "../../components/Dashboard/RecentComplaintsList";
 import ComplaintCompletionChart from "../../components/Dashboard/ComplaintCompletionChart";
+import OfficerComplaintDetail from "./OfficerComplaintDetail";
 
-export default function Dashboard() {
-  const username = localStorage.getItem("username") || "User";
+export default function OfficerDashboard() {
+  const username = localStorage.getItem("username") || "Officer";
 
   const [stats, setStats] = useState([
     {
@@ -66,19 +66,28 @@ export default function Dashboard() {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [allComplaints, setAllComplaints] = useState([]);
+  const [department, setDepartment] = useState(null);
+  const [noDepartment, setNoDepartment] = useState(false);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/reports/dashboard",
+          "http://localhost:5000/api/officer/dashboard",
           {
             withCredentials: true,
           }
         );
 
         if (response.data.success) {
-          const { stats: apiStats, recentReports } = response.data;
+          const { stats: apiStats, recentReports, department: officerDept } = response.data;
+
+          if (!officerDept) {
+            setNoDepartment(true);
+            return;
+          }
+
+          setDepartment(officerDept);
 
           const pending = Number(apiStats.pending) || 0;
           const verified = Number(apiStats.verified) || 0;
@@ -135,7 +144,6 @@ export default function Dashboard() {
             },
           ]);
 
-          // Store all report data for detailed view
           setAllComplaints(recentReports);
 
           const formattedReports = recentReports.map((report) => ({
@@ -154,7 +162,7 @@ export default function Dashboard() {
           setRecentComplaints(formattedReports);
         }
       } catch (error) {
-        console.error("Error fetching dashboard data:", error);
+        console.error("Error fetching officer dashboard data:", error);
       }
     };
 
@@ -202,10 +210,10 @@ export default function Dashboard() {
   };
 
   const chartColors = [
-    "#22C55E", // Green - Resolved
-    "#F97316", // Orange - In Progress
-    "#EAB308", // Yellow - Pending
-    "#3B82F6", // Blue - Verified
+    "#22C55E",
+    "#F97316",
+    "#EAB308",
+    "#3B82F6",
   ];
 
   const handleBackToList = () => {
@@ -220,10 +228,29 @@ export default function Dashboard() {
 
   if (showDetail && selectedComplaint) {
     return (
-      <ComplaintDetail
+      <OfficerComplaintDetail
         complaint={selectedComplaint}
         onBack={handleBackToList}
       />
+    );
+  }
+
+  if (noDepartment) {
+    return (
+      <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8">
+        <DashboardHeader username={username} />
+        <div className="flex items-center justify-center py-16">
+          <div className="text-center">
+            <div className="mb-4 text-6xl">🏢</div>
+            <h2 className="mb-2 text-2xl font-bold text-slate-900">
+              No Department Assigned
+            </h2>
+            <p className="text-slate-500">
+              Please contact your administrator to assign you to a department.
+            </p>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -243,6 +270,7 @@ export default function Dashboard() {
           allComplaints={allComplaints}
           getStatusStyles={getStatusStyles}
           onViewDetails={handleViewDetails}
+          title="Assigned Complaints"
         />
 
         <ComplaintCompletionChart

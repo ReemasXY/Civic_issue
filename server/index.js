@@ -3,6 +3,7 @@ import "dotenv/config";
 import pool from "./config/dbConnection.js";
 import userAuth from "./routes/userAuth.js";
 import reportRoutes from "./routes/reportRoutes.js";
+import officerRoutes from "./routes/officerRoutes.js";
 
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -74,6 +75,18 @@ app.use(
 app.use(
   "/api/reports",
   reportRoutes
+);
+
+
+/*
+ * ============================================================
+ * OFFICER ROUTES
+ * ============================================================
+ */
+
+app.use(
+  "/api/officer",
+  officerRoutes
 );
 
 

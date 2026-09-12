@@ -118,8 +118,15 @@ const OTPVerification = ({ email, purpose = "registration" }) => {
         localStorage.setItem("username", response.data.user.username);
       }
 
+      // Role-based redirect
       setTimeout(() => {
-        navigate("/");
+        const userRole = response.data.user?.role || localStorage.getItem("role");
+
+        if (userRole === "officer") {
+          navigate("/officer/dashboard");
+        } else {
+          navigate("/");
+        }
       }, 1500);
     } catch (error) {
       if (error.response?.data?.error) {

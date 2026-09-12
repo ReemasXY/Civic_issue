@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import ComplaintsFilters from "../../../components/ComplaintsFilter/ComplaintsFilters";
-import ComplaintCard from "../../../components/ComplaintsFilter/ComplaintCard";
-import EmptyState from "../../../components/ComplaintsFilter/EmptyState";
-import ComplaintDetail from "./ComplaintDetail";
+import ComplaintsFilters from "../../components/ComplaintsFilter/ComplaintsFilters";
+import ComplaintCard from "../../components/ComplaintsFilter/ComplaintCard";
+import EmptyState from "../../components/ComplaintsFilter/EmptyState";
+import OfficerComplaintDetail from "./OfficerComplaintDetail";
 
-export default function MyComplaints() {
+export default function AssignedComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [filteredComplaints, setFilteredComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,29 +14,31 @@ export default function MyComplaints() {
   const [severityFilter, setSeverityFilter] = useState("all");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [department, setDepartment] = useState(null);
 
   useEffect(() => {
-    const fetchComplaints = async () => {
+    const fetchAssignedComplaints = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/reports/user",
+          "http://localhost:5000/api/officer/complaints",
           {
             withCredentials: true,
           }
         );
 
         if (response.data.success) {
-          setComplaints(response.data.reports);
-          setFilteredComplaints(response.data.reports);
+          setComplaints(response.data.complaints);
+          setFilteredComplaints(response.data.complaints);
+          setDepartment(response.data.department);
         }
       } catch (error) {
-        console.error("Error fetching complaints:", error);
+        console.error("Error fetching assigned complaints:", error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchComplaints();
+    fetchAssignedComplaints();
   }, []);
 
   useEffect(() => {
@@ -56,6 +58,14 @@ export default function MyComplaints() {
       );
     }
 
+    // Sort by severity: critical > high > medium > low
+    const severityOrder = { critical: 1, high: 2, medium: 3, low: 4 };
+    filtered = filtered.sort((a, b) => {
+      const severityA = severityOrder[a.severity_level?.toLowerCase()] || 5;
+      const severityB = severityOrder[b.severity_level?.toLowerCase()] || 5;
+      return severityA - severityB;
+    });
+
     setFilteredComplaints(filtered);
   }, [statusFilter, categoryFilter, severityFilter, complaints]);
 
@@ -71,7 +81,7 @@ export default function MyComplaints() {
 
   if (showDetail && selectedComplaint) {
     return (
-      <ComplaintDetail
+      <OfficerComplaintDetail
         complaint={selectedComplaint}
         onBack={handleBackToList}
       />
@@ -83,10 +93,11 @@ export default function MyComplaints() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold text-slate-900">
-          My Complaints
+          Assigned Complaints
         </h1>
         <p className="text-slate-600">
-          Track and manage all your reported civic issues.
+          View and manage all complaints assigned to{" "}
+          {department && <span className="font-semibold">{department}</span>}
         </p>
       </div>
 
@@ -98,6 +109,7 @@ export default function MyComplaints() {
         onStatusChange={setStatusFilter}
         onCategoryChange={setCategoryFilter}
         onSeverityChange={setSeverityFilter}
+        showCategoryFilter={false}
       />
 
       {/* Complaints Grid */}

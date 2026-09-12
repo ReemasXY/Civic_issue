@@ -208,6 +208,20 @@ export const createReport = async (req, res) => {
     // Relative image URL stored in the database
     const imageUrl = `/uploads/reports/${uniqueFilename}`;
 
+    // 4.5. Determine assigned department based on category
+    const categoryLower = category.trim().toLowerCase();
+    let assignedDepartment = null;
+
+    if (categoryLower === "pothole" || categoryLower === "road damage") {
+      assignedDepartment = "Public Works Department";
+    } else if (categoryLower === "drainage") {
+      assignedDepartment = "Water Supply Department";
+    } else if (categoryLower === "garbage / waste") {
+      assignedDepartment = "Environment Management Department";
+    }
+
+    console.log("Category:", category.trim(), "-> Department:", assignedDepartment);
+
     // 5. Insert into reports table
     const insertQuery = `
       INSERT INTO reports (
@@ -222,8 +236,9 @@ export const createReport = async (req, res) => {
         image_url,
         severity_score,
         severity_level,
-        status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        status,
+        assigned_department
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *
     `;
 
@@ -240,6 +255,7 @@ export const createReport = async (req, res) => {
       severityScore !== undefined && severityScore !== null && severityScore !== "" ? parseInt(severityScore, 10) : null,
       severityLevel || null,
       "pending", // Default status
+      assignedDepartment,
     ];
 
     const result = await pool.query(insertQuery, values);

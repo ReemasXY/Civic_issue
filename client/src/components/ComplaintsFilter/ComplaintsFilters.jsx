@@ -7,6 +7,7 @@ export default function ComplaintsFilters({
   onStatusChange,
   onCategoryChange,
   onSeverityChange,
+  showCategoryFilter = true,
 }) {
   const statusOptions = [
     { value: "all", label: "All Status" },
@@ -42,12 +43,14 @@ export default function ComplaintsFilters({
         options={statusOptions}
       />
 
-      <FilterDropdown
-        label="Category"
-        value={categoryFilter}
-        onChange={onCategoryChange}
-        options={categoryOptions}
-      />
+      {showCategoryFilter && (
+        <FilterDropdown
+          label="Category"
+          value={categoryFilter}
+          onChange={onCategoryChange}
+          options={categoryOptions}
+        />
+      )}
 
       <FilterDropdown
         label="Severity"

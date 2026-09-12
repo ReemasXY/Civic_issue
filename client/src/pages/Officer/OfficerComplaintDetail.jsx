@@ -1,12 +1,11 @@
 import { useState } from "react";
-import ComplaintHeader from "../../../components/ComplaintDetail/ComplaintHeader";
-import ComplaintInformation from "../../../components/ComplaintDetail/ComplaintInformation";
-import StatusTimeline from "../../../components/ComplaintDetail/StatusTimeline";
-import MapModal from "../../../components/ComplaintDetail/MapModal";
-import { getStatusConfig } from "../../../components/ComplaintDetail/utils/statusConfig";
-import { getSeverityConfig } from "../../../components/ComplaintDetail/utils/severityConfig";
+import ComplaintHeader from "../../components/ComplaintDetail/ComplaintHeader";
+import ComplaintInformation from "../../components/ComplaintDetail/ComplaintInformation";
+import MapModal from "../../components/ComplaintDetail/MapModal";
+import { getStatusConfig } from "../../components/ComplaintDetail/utils/statusConfig";
+import { getSeverityConfig } from "../../components/ComplaintDetail/utils/severityConfig";
 
-export default function ComplaintDetail({ complaint, onBack }) {
+export default function OfficerComplaintDetail({ complaint, onBack }) {
   const [isMapExpanded, setIsMapExpanded] = useState(false);
 
   if (!complaint) {
@@ -30,17 +29,12 @@ export default function ComplaintDetail({ complaint, onBack }) {
         statusConfig={currentStatusConfig}
       />
 
-      {/* MAIN CONTENT */}
-      <div className="grid items-stretch gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(320px,1fr)]">
+      {/* MAIN CONTENT - Single Column Layout without Status Timeline */}
+      <div className="mx-auto max-w-4xl">
         <ComplaintInformation
           complaint={complaint}
           onMapClick={() => setIsMapExpanded(true)}
           severityConfig={currentSeverityConfig}
-        />
-
-        <StatusTimeline
-          complaint={complaint}
-          getStatusConfig={getStatusConfig}
         />
       </div>
 
@@ -50,9 +44,7 @@ export default function ComplaintDetail({ complaint, onBack }) {
         latitude={complaint.latitude}
         longitude={complaint.longitude}
         locationLabel={
-          complaint.location_short_label ||
-          complaint.location_full_label ||
-          "Complaint location"
+          complaint.location_short_label || complaint.location_full_label
         }
       />
     </div>

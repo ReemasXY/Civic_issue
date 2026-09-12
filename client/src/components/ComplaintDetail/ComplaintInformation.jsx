@@ -1,6 +1,6 @@
 import { FiTag, FiAlertCircle, FiMapPin, FiFileText } from "react-icons/fi";
 
-export default function ComplaintInformation({ complaint, onMapClick, severityConfig }) {
+export default function ComplaintInformation({ complaint, onMapClick, severityConfig, showCategory = true }) {
   return (
     <div className="min-w-0 lg:h-full">
       {/* Complaint Information */}
@@ -14,19 +14,21 @@ export default function ComplaintInformation({ complaint, onMapClick, severityCo
 
         {/* Information Grid */}
         <div className="space-y-8">
-          {/* Severity and Category - Side by Side */}
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Category */}
-            <div>
-              <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                <FiTag className="h-3.5 w-3.5" />
-                Category
-              </div>
+          {/* Severity and Category - Side by Side or Severity Only */}
+          <div className={showCategory ? "grid gap-6 md:grid-cols-2" : ""}>
+            {/* Category - Only show if showCategory is true */}
+            {showCategory && (
+              <div>
+                <div className="mb-2 flex items-center gap-2 text-xs font-medium uppercase tracking-wide text-slate-400">
+                  <FiTag className="h-3.5 w-3.5" />
+                  Category
+                </div>
 
-              <p className="text-sm font-semibold text-[#14233b]">
-                {complaint.category}
-              </p>
-            </div>
+                <p className="text-sm font-semibold text-[#14233b]">
+                  {complaint.category}
+                </p>
+              </div>
+            )}
 
             {/* Severity */}
             <div>
@@ -35,7 +37,7 @@ export default function ComplaintInformation({ complaint, onMapClick, severityCo
                 Severity
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex">
                 <span
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${severityConfig.bgColor} ${severityConfig.textColor}`}
                 >

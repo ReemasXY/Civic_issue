@@ -18,7 +18,7 @@ CREATE TABLE reports (
     latitude DECIMAL(10, 8),
     longitude DECIMAL(11, 8),
 
-    -- Image URL (stored in filesystem or cloud storage)
+    -- Image URL (stored in filesystem )
     image_url TEXT,
 
     -- Severity information from assessment
@@ -34,4 +34,7 @@ CREATE TABLE reports (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
-
+select*from reports
+ALTER TABLE reports
+ADD COLUMN assigned_department VARCHAR(100);
+TRUNCATE TABLE reports RESTART IDENTITY CASCADE;
