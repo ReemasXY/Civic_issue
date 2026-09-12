@@ -7,6 +7,7 @@ import Login from "./pages/Login&Register/Login";
 import CitizenLayout from "./pages/Citizen/CitizenLayout";
 import Dashboard from "./pages/Citizen/Dashboard";
 import ReportIssue from "./pages/Citizen/ReportIssue/ReportIssue";
+import MyComplaints from "./pages/Citizen/MyComplaints/MyComplaints";
 
 function App() {
   const router = createBrowserRouter([
@@ -39,6 +40,10 @@ function App() {
         {
           path: "report",
           element: <ReportIssue />,
+        },
+        {
+          path: "my-complaints",
+          element: <MyComplaints />,
         },
       ],
     },

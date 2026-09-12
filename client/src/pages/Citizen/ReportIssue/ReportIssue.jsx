@@ -621,12 +621,12 @@ export default function ReportIssue({
         formData.append("category", category);
         formData.append("image", imageFile);
 
-        if (selectedLocation?.label) {
-          formData.append("locationShortLabel", selectedLocation.label);
+        if (selectedLocation?.shortLabel) {
+          formData.append("locationShortLabel", selectedLocation.shortLabel);
         }
 
-        if (selectedLocation?.fullLabel) {
-          formData.append("locationFullLabel", selectedLocation.fullLabel);
+        if (selectedLocation?.label) {
+          formData.append("locationFullLabel", selectedLocation.label);
         }
 
         if (selectedLocation?.lat) {

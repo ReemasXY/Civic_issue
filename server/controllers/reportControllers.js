@@ -10,9 +10,136 @@ const __dirname = path.dirname(__filename);
  * Create a new civic issue report
  * Saves the uploaded image to server storage and records the report with image_url and status in PostgreSQL
  */
-export const 
+/**
+ * Get dashboard statistics and recent reports for a specific user
+ * Returns: total, pending, in-progress, resolved counts + recent reports list
+ */
+export const getDashboardData = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
 
-createReport = async (req, res) => {
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated. Please log in.",
+      });
+    }
+
+    // Get statistics grouped by status
+    const statsQuery = `
+      SELECT
+        COUNT(*) FILTER (WHERE status = 'pending') as pending,
+        COUNT(*) FILTER (WHERE status = 'verified') as verified,
+        COUNT(*) FILTER (WHERE status = 'in-progress') as in_progress,
+        COUNT(*) FILTER (WHERE status = 'resolved') as resolved,
+        COUNT(*) as total
+      FROM reports
+      WHERE user_id = $1
+    `;
+
+    const statsResult = await pool.query(statsQuery, [user_id]);
+    const stats = statsResult.rows[0];
+
+    // Get recent reports (last 3)
+    const reportsQuery = `
+      SELECT
+        report_id,
+        title,
+        category,
+        location_short_label,
+        location_full_label,
+        image_url,
+        status,
+        severity_level,
+        created_at,
+        updated_at
+      FROM reports
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+      LIMIT 3
+    `;
+
+    const reportsResult = await pool.query(reportsQuery, [user_id]);
+    const recentReports = reportsResult.rows;
+
+    return res.status(200).json({
+      success: true,
+      stats: {
+        total: parseInt(stats.total, 10),
+        pending: parseInt(stats.pending, 10),
+        verified: parseInt(stats.verified, 10),
+        inProgress: parseInt(stats.in_progress, 10),
+        resolved: parseInt(stats.resolved, 10),
+      },
+      recentReports,
+    });
+  } catch (error) {
+    console.error("❌ Error in getDashboardData:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching dashboard data.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * Get all complaints for a specific user
+ * Returns: all reports for the authenticated user
+ */
+export const getUserComplaints = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated. Please log in.",
+      });
+    }
+
+    // Get all reports for the user
+    const reportsQuery = `
+      SELECT
+        report_id,
+        title,
+        description,
+        category,
+        location_short_label,
+        location_full_label,
+        latitude,
+        longitude,
+        image_url,
+        status,
+        severity_level,
+        severity_score,
+        created_at,
+        updated_at
+      FROM reports
+      WHERE user_id = $1
+      ORDER BY created_at DESC
+    `;
+
+    const reportsResult = await pool.query(reportsQuery, [user_id]);
+    const reports = reportsResult.rows;
+
+    return res.status(200).json({
+      success: true,
+      reports,
+    });
+  } catch (error) {
+    console.error("❌ Error in getUserComplaints:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching complaints.",
+      details: error.message,
+    });
+  }
+};
+
+export const createReport = async (req, res) => {
   try {
     console.log("========================================");
     console.log("CREATE REPORT REQUEST RECEIVED");

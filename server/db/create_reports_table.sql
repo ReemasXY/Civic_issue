@@ -27,7 +27,7 @@ CREATE TABLE reports (
 
     -- Status tracking
     status VARCHAR(20) NOT NULL DEFAULT 'pending'
-        CHECK (status IN ('pending', 'verified', 'in-progress', 'resolved', 'rejected')),
+        CHECK (status IN ('pending', 'verified', 'in-progress', 'resolved')),
 
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 

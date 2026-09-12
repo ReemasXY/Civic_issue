@@ -6,7 +6,7 @@ import {
     verifyImage,
 } from "../utils/verifyImage.js";
 
-import { createReport } from "../controllers/reportControllers.js";
+import { createReport, getDashboardData, getUserComplaints } from "../controllers/reportControllers.js";
 
 import { checkToken } from "../middleware/checkToken.js";
 
@@ -27,6 +27,36 @@ router.post(
     checkToken,
     upload.single("image"),
     createReport
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: GET DASHBOARD DATA
+ * ============================================================
+ * GET /api/reports/dashboard
+ * Fetches user-specific statistics and recent reports
+ */
+
+router.get(
+    "/dashboard",
+    checkToken,
+    getDashboardData
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: GET USER COMPLAINTS
+ * ============================================================
+ * GET /api/reports/user
+ * Fetches all reports for the authenticated user
+ */
+
+router.get(
+    "/user",
+    checkToken,
+    getUserComplaints
 );
 
 
