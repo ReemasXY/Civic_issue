@@ -16,7 +16,7 @@ export default function CitizenLayout() {
     { path: "/citizen/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/citizen/report", icon: FiPlusCircle, label: "Report Issue" },
     { path: "/citizen/my-complaints", icon: FiFileText, label: "My Complaints" },
-    { path: "/citizen/nearby", icon: FiMapPin, label: "Nearby Complaints" },
+    // { path: "/citizen/nearby", icon: FiMapPin, label: "Nearby Complaints" },
     { path: "/citizen/notifications", icon: FiBell, label: "Notifications" },
   ];
 

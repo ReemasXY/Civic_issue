@@ -1,7 +1,8 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import pool from "../config/dbConnection.js";
-import { generateOTP, getOTPExpiry, sendOtpEmail, scheduleOTPCleanup } from "../utils/emailService.js";
+// COMMENTED OUT: OTP email verification
+// import { generateOTP, getOTPExpiry, sendOtpEmail, scheduleOTPCleanup } from "../utils/emailService.js";
 
 const registerUser = async (req, res) => {
   try {
@@ -50,34 +51,71 @@ const registerUser = async (req, res) => {
     const salt = await bcrypt.genSalt(Number(saltRounds));
     const hashPassword = await bcrypt.hash(password, salt);
 
-    // Generate 6-digit OTP and expiry time (5 minutes)
-    const otpCode = generateOTP();
-    const otpExpiresAt = getOTPExpiry();
+    // COMMENTED OUT: OTP verification flow
+    // // Generate 6-digit OTP and expiry time (5 minutes)
+    // const otpCode = generateOTP();
+    // const otpExpiresAt = getOTPExpiry();
 
-    // Store in pending_registrations table (upsert if email already has a pending registration)
-    await pool.query(
-      `INSERT INTO pending_registrations
-        (email, username, phone_number, password_hash, otp_code, otp_expires_at)
+    // // Store in pending_registrations table (upsert if email already has a pending registration)
+    // await pool.query(
+    //   `INSERT INTO pending_registrations
+    //     (email, username, phone_number, password_hash, otp_code, otp_expires_at)
+    //    VALUES
+    //     ($1, $2, $3, $4, $5, $6)
+    //    ON CONFLICT (email) DO UPDATE SET
+    //     username = EXCLUDED.username,
+    //     phone_number = EXCLUDED.phone_number,
+    //     password_hash = EXCLUDED.password_hash,
+    //     otp_code = EXCLUDED.otp_code,
+    //     otp_expires_at = EXCLUDED.otp_expires_at,
+    //     created_at = CURRENT_TIMESTAMP`,
+    //   [email, username, phone_number, hashPassword, otpCode, otpExpiresAt]
+    // );
+
+    // // Schedule cleanup after 5 minutes
+    // scheduleOTPCleanup(email, "pending_registrations");
+
+    // // Send OTP email
+    // await sendOtpEmail(email, otpCode, "registration");
+
+    // return res.status(200).json({
+    //   message: "Verification code sent to your email. Please verify to complete registration.",
+    // });
+
+    // DIRECT REGISTRATION: Insert user directly into users table
+    const insertResult = await pool.query(
+      `INSERT INTO users
+        (email, username, phone_number, password_hash, role)
        VALUES
-        ($1, $2, $3, $4, $5, $6)
-       ON CONFLICT (email) DO UPDATE SET
-        username = EXCLUDED.username,
-        phone_number = EXCLUDED.phone_number,
-        password_hash = EXCLUDED.password_hash,
-        otp_code = EXCLUDED.otp_code,
-        otp_expires_at = EXCLUDED.otp_expires_at,
-        created_at = CURRENT_TIMESTAMP`,
-      [email, username, phone_number, hashPassword, otpCode, otpExpiresAt]
+        ($1, $2, $3, $4, $5)
+       RETURNING user_id, email, username, phone_number, role`,
+      [email, username, phone_number, hashPassword, "citizen"]
     );
 
-    // Schedule cleanup after 5 minutes
-    scheduleOTPCleanup(email, "pending_registrations");
+    const newUser = insertResult.rows[0];
 
-    // Send OTP email
-    await sendOtpEmail(email, otpCode, "registration");
+    // Generate JWT token
+    const token = jwt.sign(
+      {
+        user_id: newUser.user_id,
+        username: newUser.username,
+        role: newUser.role,
+      },
+      process.env.JWT_SECRET
+    );
 
-    return res.status(200).json({
-      message: "Verification code sent to your email. Please verify to complete registration.",
+    // Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(201).json({
+      message: "Account created successfully! Welcome to CivicCare.",
+      token,
+      user: newUser,
     });
 
   } catch (error) {
@@ -119,32 +157,63 @@ const loginUser = async (req, res) => {
       });
     }
 
-    // Generate 6-digit OTP and expiry time (5 minutes)
-    const otpCode = generateOTP();
-    const otpExpiresAt = getOTPExpiry();
+    // COMMENTED OUT: OTP verification flow
+    // // Generate 6-digit OTP and expiry time (5 minutes)
+    // const otpCode = generateOTP();
+    // const otpExpiresAt = getOTPExpiry();
 
-    // Store in pending_logins table (upsert if email already has a pending login)
-    await pool.query(
-      `INSERT INTO pending_logins
-        (user_id, email, otp_code, otp_expires_at)
-       VALUES
-        ($1, $2, $3, $4)
-       ON CONFLICT (email) DO UPDATE SET
-        user_id = EXCLUDED.user_id,
-        otp_code = EXCLUDED.otp_code,
-        otp_expires_at = EXCLUDED.otp_expires_at,
-        created_at = CURRENT_TIMESTAMP`,
-      [user.user_id, email, otpCode, otpExpiresAt]
+    // // Store in pending_logins table (upsert if email already has a pending login)
+    // await pool.query(
+    //   `INSERT INTO pending_logins
+    //     (user_id, email, otp_code, otp_expires_at)
+    //    VALUES
+    //     ($1, $2, $3, $4)
+    //    ON CONFLICT (email) DO UPDATE SET
+    //     user_id = EXCLUDED.user_id,
+    //     otp_code = EXCLUDED.otp_code,
+    //     otp_expires_at = EXCLUDED.otp_expires_at,
+    //     created_at = CURRENT_TIMESTAMP`,
+    //   [user.user_id, email, otpCode, otpExpiresAt]
+    // );
+
+    // // Schedule cleanup after 5 minutes
+    // scheduleOTPCleanup(email, "pending_logins");
+
+    // // Send OTP email
+    // await sendOtpEmail(email, otpCode, "login");
+
+    // return res.status(200).json({
+    //   message: "Verification code sent to your email. Please verify to log in.",
+    // });
+
+    // DIRECT LOGIN: Generate JWT and login immediately after password validation
+    const token = jwt.sign(
+      {
+        user_id: user.user_id,
+        username: user.username,
+        role: user.role,
+      },
+      process.env.JWT_SECRET
     );
 
-    // Schedule cleanup after 5 minutes
-    scheduleOTPCleanup(email, "pending_logins");
-
-    // Send OTP email
-    await sendOtpEmail(email, otpCode, "login");
+    // Set cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
 
     return res.status(200).json({
-      message: "Verification code sent to your email. Please verify to log in.",
+      message: "Login successful! Welcome back.",
+      token,
+      user: {
+        user_id: user.user_id,
+        email: user.email,
+        username: user.username,
+        phone_number: user.phone_number,
+        role: user.role,
+      },
     });
 
   } catch (error) {
@@ -156,268 +225,270 @@ const loginUser = async (req, res) => {
   }
 };
 
-const verifyOTP = async (req, res) => {
-  try {
-    const { email, otp, purpose } = req.body;
+// COMMENTED OUT: OTP verification is disabled
+// const verifyOTP = async (req, res) => {
+//   try {
+//     const { email, otp, purpose } = req.body;
 
-    if (!email || !otp) {
-      return res.status(400).json({
-        error: ["Email and OTP are required"],
-      });
-    }
+//     if (!email || !otp) {
+//       return res.status(400).json({
+//         error: ["Email and OTP are required"],
+//       });
+//     }
 
-    if (purpose === "registration") {
-      // Check pending_registrations table
-      const pendingResult = await pool.query(
-        `SELECT * FROM pending_registrations WHERE email = $1`,
-        [email]
-      );
+//     if (purpose === "registration") {
+//       // Check pending_registrations table
+//       const pendingResult = await pool.query(
+//         `SELECT * FROM pending_registrations WHERE email = $1`,
+//         [email]
+//       );
 
-      if (pendingResult.rows.length === 0) {
-        return res.status(400).json({
-          error: ["No pending registration found for this email. Please register again."],
-        });
-      }
+//       if (pendingResult.rows.length === 0) {
+//         return res.status(400).json({
+//           error: ["No pending registration found for this email. Please register again."],
+//         });
+//       }
 
-      const pending = pendingResult.rows[0];
+//       const pending = pendingResult.rows[0];
 
-      // Check if OTP matches
-      if (pending.otp_code !== otp) {
-        return res.status(400).json({
-          error: ["Invalid OTP code. Please check and try again."],
-        });
-      }
+//       // Check if OTP matches
+//       if (pending.otp_code !== otp) {
+//         return res.status(400).json({
+//           error: ["Invalid OTP code. Please check and try again."],
+//         });
+//       }
 
-      // Check if OTP has expired
-      if (new Date() > new Date(pending.otp_expires_at)) {
-        return res.status(400).json({
-          error: ["OTP has expired. Please request a new one."],
-        });
-      }
+//       // Check if OTP has expired
+//       if (new Date() > new Date(pending.otp_expires_at)) {
+//         return res.status(400).json({
+//           error: ["OTP has expired. Please request a new one."],
+//         });
+//       }
 
-      // Insert new user into the users table
-      const insertResult = await pool.query(
-        `INSERT INTO users
-          (email, username, phone_number, password_hash, role)
-         VALUES
-          ($1, $2, $3, $4, $5)
-         RETURNING user_id, email, username, phone_number, role`,
-        [
-          pending.email,
-          pending.username,
-          pending.phone_number,
-          pending.password_hash,
-          pending.role,
-        ]
-      );
+//       // Insert new user into the users table
+//       const insertResult = await pool.query(
+//         `INSERT INTO users
+//           (email, username, phone_number, password_hash, role)
+//          VALUES
+//           ($1, $2, $3, $4, $5)
+//          RETURNING user_id, email, username, phone_number, role`,
+//         [
+//           pending.email,
+//           pending.username,
+//           pending.phone_number,
+//           pending.password_hash,
+//           pending.role,
+//         ]
+//       );
 
-      const newUser = insertResult.rows[0];
+//       const newUser = insertResult.rows[0];
 
-      // Remove from pending_registrations
-      await pool.query(
-        `DELETE FROM pending_registrations WHERE email = $1`,
-        [email]
-      );
+//       // Remove from pending_registrations
+//       await pool.query(
+//         `DELETE FROM pending_registrations WHERE email = $1`,
+//         [email]
+//       );
 
-      // Sign JWT token
-      const token = jwt.sign(
-        {
-          user_id: newUser.user_id,
-          username: newUser.username,
-          role: newUser.role,
-        },
-        process.env.JWT_SECRET
-      );
+//       // Sign JWT token
+//       const token = jwt.sign(
+//         {
+//           user_id: newUser.user_id,
+//           username: newUser.username,
+//           role: newUser.role,
+//         },
+//         process.env.JWT_SECRET
+//       );
 
-      // Set cookie
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
+//       // Set cookie
+//       res.cookie("token", token, {
+//         httpOnly: true,
+//         secure: false,
+//         sameSite: "lax",
+//         maxAge: 24 * 60 * 60 * 1000,
+//       });
 
-      return res.status(201).json({
-        message: "Account verified successfully! Welcome to CivicCare.",
-        token,
-        user: newUser,
-      });
+//       return res.status(201).json({
+//         message: "Account verified successfully! Welcome to CivicCare.",
+//         token,
+//         user: newUser,
+//       });
 
-    } else if (purpose === "login") {
-      // Check pending_logins table
-      const pendingResult = await pool.query(
-        `SELECT * FROM pending_logins WHERE email = $1`,
-        [email]
-      );
+//     } else if (purpose === "login") {
+//       // Check pending_logins table
+//       const pendingResult = await pool.query(
+//         `SELECT * FROM pending_logins WHERE email = $1`,
+//         [email]
+//       );
 
-      if (pendingResult.rows.length === 0) {
-        return res.status(400).json({
-          error: ["No pending login session found. Please log in again."],
-        });
-      }
+//       if (pendingResult.rows.length === 0) {
+//         return res.status(400).json({
+//           error: ["No pending login session found. Please log in again."],
+//         });
+//       }
 
-      const pending = pendingResult.rows[0];
+//       const pending = pendingResult.rows[0];
 
-      // Check if OTP matches
-      if (pending.otp_code !== otp) {
-        return res.status(400).json({
-          error: ["Invalid OTP code. Please check and try again."],
-        });
-      }
+//       // Check if OTP matches
+//       if (pending.otp_code !== otp) {
+//         return res.status(400).json({
+//           error: ["Invalid OTP code. Please check and try again."],
+//         });
+//       }
 
-      // Check if OTP has expired
-      if (new Date() > new Date(pending.otp_expires_at)) {
-        return res.status(400).json({
-          error: ["OTP has expired. Please request a new one."],
-        });
-      }
+//       // Check if OTP has expired
+//       if (new Date() > new Date(pending.otp_expires_at)) {
+//         return res.status(400).json({
+//           error: ["OTP has expired. Please request a new one."],
+//         });
+//       }
 
-      // Fetch user details from users table
-      const userResult = await pool.query(
-        `SELECT user_id, email, username, phone_number, role FROM users WHERE user_id = $1`,
-        [pending.user_id]
-      );
+//       // Fetch user details from users table
+//       const userResult = await pool.query(
+//         `SELECT user_id, email, username, phone_number, role FROM users WHERE user_id = $1`,
+//         [pending.user_id]
+//       );
 
-      if (userResult.rows.length === 0) {
-        return res.status(404).json({
-          error: ["User account not found."],
-        });
-      }
+//       if (userResult.rows.length === 0) {
+//         return res.status(404).json({
+//           error: ["User account not found."],
+//         });
+//       }
 
-      const user = userResult.rows[0];
+//       const user = userResult.rows[0];
 
-      // Remove from pending_logins
-      await pool.query(
-        `DELETE FROM pending_logins WHERE email = $1`,
-        [email]
-      );
+//       // Remove from pending_logins
+//       await pool.query(
+//         `DELETE FROM pending_logins WHERE email = $1`,
+//         [email]
+//       );
 
-      // Sign JWT token
-      const token = jwt.sign(
-        {
-          user_id: user.user_id,
-          username: user.username,
-          role: user.role,
-        },
-        process.env.JWT_SECRET
-      );
+//       // Sign JWT token
+//       const token = jwt.sign(
+//         {
+//           user_id: user.user_id,
+//           username: user.username,
+//           role: user.role,
+//         },
+//         process.env.JWT_SECRET
+//       );
 
-      // Set cookie
-      res.cookie("token", token, {
-        httpOnly: true,
-        secure: false,
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      });
+//       // Set cookie
+//       res.cookie("token", token, {
+//         httpOnly: true,
+//         secure: false,
+//         sameSite: "lax",
+//         maxAge: 24 * 60 * 60 * 1000,
+//       });
 
-      return res.status(200).json({
-        message: "Login successful! Welcome back.",
-        token,
-        user,
-      });
+//       return res.status(200).json({
+//         message: "Login successful! Welcome back.",
+//         token,
+//         user,
+//       });
 
-    } else {
-      return res.status(400).json({
-        error: ["Invalid verification purpose specified."],
-      });
-    }
+//     } else {
+//       return res.status(400).json({
+//         error: ["Invalid verification purpose specified."],
+//       });
+//     }
 
-  } catch (error) {
-    console.error("OTP verification error:", error);
-    return res.status(500).json({
-      error: ["Internal server error during verification"],
-    });
-  }
-};
+//   } catch (error) {
+//     console.error("OTP verification error:", error);
+//     return res.status(500).json({
+//       error: ["Internal server error during verification"],
+//     });
+//   }
+// };
 
-const resendOTP = async (req, res) => {
-  try {
-    const { email, purpose } = req.body;
+// COMMENTED OUT: Resend OTP is disabled
+// const resendOTP = async (req, res) => {
+//   try {
+//     const { email, purpose } = req.body;
 
-    if (!email) {
-      return res.status(400).json({
-        error: ["Email is required"],
-      });
-    }
+//     if (!email) {
+//       return res.status(400).json({
+//         error: ["Email is required"],
+//       });
+//     }
 
-    const otpCode = generateOTP();
-    const otpExpiresAt = getOTPExpiry();
+//     const otpCode = generateOTP();
+//     const otpExpiresAt = getOTPExpiry();
 
-    if (purpose === "registration") {
-      // Check if registration is pending
-      const pendingResult = await pool.query(
-        `SELECT * FROM pending_registrations WHERE email = $1`,
-        [email]
-      );
+//     if (purpose === "registration") {
+//       // Check if registration is pending
+//       const pendingResult = await pool.query(
+//         `SELECT * FROM pending_registrations WHERE email = $1`,
+//         [email]
+//       );
 
-      if (pendingResult.rows.length === 0) {
-        return res.status(404).json({
-          error: ["No pending registration found for this email. Please register again."],
-        });
-      }
+//       if (pendingResult.rows.length === 0) {
+//         return res.status(404).json({
+//           error: ["No pending registration found for this email. Please register again."],
+//         });
+//       }
 
-      // Update with new OTP and expiry
-      await pool.query(
-        `UPDATE pending_registrations
-         SET otp_code = $1, otp_expires_at = $2, created_at = CURRENT_TIMESTAMP
-         WHERE email = $3`,
-        [otpCode, otpExpiresAt, email]
-      );
+//       // Update with new OTP and expiry
+//       await pool.query(
+//         `UPDATE pending_registrations
+//          SET otp_code = $1, otp_expires_at = $2, created_at = CURRENT_TIMESTAMP
+//          WHERE email = $3`,
+//         [otpCode, otpExpiresAt, email]
+//       );
 
-      // Schedule cleanup after 5 minutes
-      scheduleOTPCleanup(email, "pending_registrations");
+//       // Schedule cleanup after 5 minutes
+//       scheduleOTPCleanup(email, "pending_registrations");
 
-      // Send email
-      await sendOtpEmail(email, otpCode, "registration");
+//       // Send email
+//       await sendOtpEmail(email, otpCode, "registration");
 
-      return res.status(200).json({
-        message: "A new verification code has been sent to your email.",
-      });
+//       return res.status(200).json({
+//         message: "A new verification code has been sent to your email.",
+//       });
 
-    } else if (purpose === "login") {
-      // Check if login is pending
-      const pendingResult = await pool.query(
-        `SELECT * FROM pending_logins WHERE email = $1`,
-        [email]
-      );
+//     } else if (purpose === "login") {
+//       // Check if login is pending
+//       const pendingResult = await pool.query(
+//         `SELECT * FROM pending_logins WHERE email = $1`,
+//         [email]
+//       );
 
-      if (pendingResult.rows.length === 0) {
-        return res.status(404).json({
-          error: ["No pending login session found. Please log in again."],
-        });
-      }
+//       if (pendingResult.rows.length === 0) {
+//         return res.status(404).json({
+//           error: ["No pending login session found. Please log in again."],
+//         });
+//       }
 
-      // Update with new OTP and expiry
-      await pool.query(
-        `UPDATE pending_logins
-         SET otp_code = $1, otp_expires_at = $2, created_at = CURRENT_TIMESTAMP
-         WHERE email = $3`,
-        [otpCode, otpExpiresAt, email]
-      );
+//       // Update with new OTP and expiry
+//       await pool.query(
+//         `UPDATE pending_logins
+//          SET otp_code = $1, otp_expires_at = $2, created_at = CURRENT_TIMESTAMP
+//          WHERE email = $3`,
+//         [otpCode, otpExpiresAt, email]
+//       );
 
-      // Schedule cleanup after 5 minutes
-      scheduleOTPCleanup(email, "pending_logins");
+//       // Schedule cleanup after 5 minutes
+//       scheduleOTPCleanup(email, "pending_logins");
 
-      // Send email
-      await sendOtpEmail(email, otpCode, "login");
+//       // Send email
+//       await sendOtpEmail(email, otpCode, "login");
 
-      return res.status(200).json({
-        message: "A new verification code has been sent to your email.",
-      });
+//       return res.status(200).json({
+//         message: "A new verification code has been sent to your email.",
+//       });
 
-    } else {
-      return res.status(400).json({
-        error: ["Invalid purpose specified."],
-      });
-    }
+//     } else {
+//       return res.status(400).json({
+//         error: ["Invalid purpose specified."],
+//       });
+//     }
 
-  } catch (error) {
-    console.error("Resend OTP error:", error);
-    return res.status(500).json({
-      error: ["Failed to resend verification code. Please try again."],
-    });
-  }
-};
+//   } catch (error) {
+//     console.error("Resend OTP error:", error);
+//     return res.status(500).json({
+//       error: ["Failed to resend verification code. Please try again."],
+//     });
+//   }
+// };
 
 const getUser = async (req, res) => {
   try {
@@ -462,4 +533,6 @@ const logout = async (req, res) => {
   }
 };
 
-export { registerUser, loginUser, getUser, logout, verifyOTP, resendOTP };
+// COMMENTED OUT: OTP functions are no longer exported
+// export { registerUser, loginUser, getUser, logout, verifyOTP, resendOTP };
+export { registerUser, loginUser, getUser, logout };

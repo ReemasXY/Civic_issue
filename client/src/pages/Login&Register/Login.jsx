@@ -4,16 +4,18 @@ import { useGSAP } from "@gsap/react";
 
 import MobileLogin from "./MobileLogin";
 import DesktopLogin from "./DesktopLogin";
-import OTPVerification from "./OTPVerification";
+// COMMENTED OUT: OTP verification is disabled
+// import OTPVerification from "./OTPVerification";
 import Toast from "../../utils/Toast";
 
 gsap.registerPlugin(useGSAP);
 
 export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [showOTP, setShowOTP] = useState(false);
-  const [userEmail, setUserEmail] = useState("");
-  const [otpPurpose, setOtpPurpose] = useState("");
+  // COMMENTED OUT: OTP-related state
+  // const [showOTP, setShowOTP] = useState(false);
+  // const [userEmail, setUserEmail] = useState("");
+  // const [otpPurpose, setOtpPurpose] = useState("");
 
   const loginRef = useRef(null);
 
@@ -44,11 +46,12 @@ export default function Login() {
     }));
   };
 
-  const handleShowOTP = (email, purpose) => {
-    setUserEmail(email);
-    setOtpPurpose(purpose);
-    setShowOTP(true);
-  };
+  // COMMENTED OUT: OTP handler
+  // const handleShowOTP = (email, purpose) => {
+  //   setUserEmail(email);
+  //   setOtpPurpose(purpose);
+  //   setShowOTP(true);
+  // };
 
   useGSAP(
     () => {
@@ -73,7 +76,7 @@ export default function Login() {
     },
     {
       scope: loginRef,
-      dependencies: [showOTP],
+      dependencies: [],
     }
   );
 
@@ -94,10 +97,11 @@ export default function Login() {
         ref={loginRef}
         className="min-h-screen w-full flex items-center justify-center px-4 py-6"
       >
-        {showOTP ? (
+        {/* COMMENTED OUT: OTP verification flow removed */}
+        {/* {showOTP ? (
           <OTPVerification email={userEmail} purpose={otpPurpose} />
         ) : (
-          <>
+          <> */}
             <MobileLogin
               signUpForm={signUpForm}
               update={update}
@@ -105,7 +109,6 @@ export default function Login() {
               setIsSignUp={setIsSignUp}
               loginForm={loginForm}
               updateLogin={updateLogin}
-              onShowOTP={handleShowOTP}
             />
 
             <DesktopLogin
@@ -115,10 +118,9 @@ export default function Login() {
               setIsSignUp={setIsSignUp}
               loginForm={loginForm}
               updateLogin={updateLogin}
-              onShowOTP={handleShowOTP}
             />
-          </>
-        )}
+          {/* </>
+        )} */}
       </div>
     </div>
   );

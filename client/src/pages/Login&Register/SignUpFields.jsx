@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import errToast from "../../utils/ErrorToast.js";
 import successToast from "../../utils/SuccessToast.js";
 
-const SignUpFields = ({ signUpForm, update, onShowOTP }) => {
+const SignUpFields = ({ signUpForm, update }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -36,10 +38,29 @@ const SignUpFields = ({ signUpForm, update, onShowOTP }) => {
         successToast(response.data.message);
       }
 
-      // Show OTP verification
+      // DIRECT REGISTRATION: Store user info and redirect immediately
+      if (response.data.user) {
+        localStorage.setItem("user_id", response.data.user.user_id);
+        localStorage.setItem("role", response.data.user.role);
+        localStorage.setItem("username", response.data.user.username);
+      }
+
+      // Redirect based on role after a short delay
       setTimeout(() => {
-        onShowOTP(signUpForm.email, "registration");
-      }, 1000);
+        const userRole = response.data.user?.role || localStorage.getItem("role");
+
+        if (userRole === "officer") {
+          navigate("/officer/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 1500);
+
+      // COMMENTED OUT: OTP verification flow
+      // // Show OTP verification
+      // setTimeout(() => {
+      //   onShowOTP(signUpForm.email, "registration");
+      // }, 1000);
     } catch (error) {
       if (error.response) {
         console.error(
@@ -157,7 +178,7 @@ const SignUpFields = ({ signUpForm, update, onShowOTP }) => {
         disabled={isLoading}
         className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-all duration-200 hover:bg-[#1F8A70] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#14233B] mt-1"
       >
-        {isLoading ? "Sending code..." : "Sign Up"}
+        {isLoading ? "Creating account..." : "Sign Up"}
       </button>
     </form>
   );

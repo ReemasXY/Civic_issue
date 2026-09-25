@@ -9,7 +9,8 @@ const MobileLogin = ({
   isSignUp,
   loginForm,
   updateLogin,
-  onShowOTP,
+  // COMMENTED OUT: onShowOTP prop removed
+  // onShowOTP,
 }) => {
   const slide = "transition-transform duration-700 ease-in-out";
   const fade = "transition-opacity duration-700 ease-in-out";
@@ -81,7 +82,6 @@ const MobileLogin = ({
             <SignUpFields
               signUpForm={signUpForm}
               update={update}
-              onShowOTP={onShowOTP}
             />
 
             <p className="text-center text-[12.5px] text-[#687585] mt-5">
@@ -108,7 +108,6 @@ const MobileLogin = ({
             <LogInFields
               loginForm={loginForm}
               updateLogin={updateLogin}
-              onShowOTP={onShowOTP}
             />
 
             <p className="text-center text-[12.5px] text-[#687585] mt-5">

@@ -6,7 +6,7 @@ import {
     verifyImage,
 } from "../utils/verifyImage.js";
 
-import { createReport, getDashboardData, getUserComplaints } from "../controllers/reportControllers.js";
+import { createReport, getDashboardData, getUserComplaints, getRecentComplaints } from "../controllers/reportControllers.js";
 
 import { checkToken } from "../middleware/checkToken.js";
 
@@ -57,6 +57,20 @@ router.get(
     "/user",
     checkToken,
     getUserComplaints
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: GET RECENT COMPLAINTS (PUBLIC)
+ * ============================================================
+ * GET /api/reports/recent
+ * Fetches 6 most recent reports for the home page (no auth required)
+ */
+
+router.get(
+    "/recent",
+    getRecentComplaints
 );
 
 

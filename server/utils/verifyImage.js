@@ -2,11 +2,7 @@ import { pipeline } from "@huggingface/transformers";
 
 let imageClassifier = null;
 
-/*
- * ============================================================
- * CIVIC ISSUE CATEGORIES
- * ============================================================
- */
+
 
 const CIVIC_CATEGORIES = {
   Pothole:
@@ -25,20 +21,7 @@ const CIVIC_CATEGORIES = {
     "a photo of a damaged, cracked, or broken public road, street, or village pathway",
 };
 
-/*
- * ============================================================
- * NON-CIVIC CATEGORIES
- *
- * Used only as "competition" so the model has something to
- * weigh civic labels against. We never report these directly.
- *
- * "Private Property" specifically exists to catch photos that
- * might otherwise LOOK like a civic category (a leak, a mess,
- * a crack) but are actually inside/on someone's private home
- * or land rather than a shared public space — those aren't
- * reportable civic issues even if visually similar.
- * ============================================================
- */
+
 
 const NON_CIVIC_CATEGORIES = {
   Person: "a photo of a person",
@@ -54,25 +37,12 @@ const NON_CIVIC_CATEGORIES = {
     "a photo of garbage, waste, or trash in a river, farmland, forest, field, empty plot, or private yard, but not on a public road or street",
 };
 
-/*
- * Minimum absolute confidence the best civic label must reach
- * (as a fraction of the FULL label set, civic + non-civic)
- * before we're willing to call something a civic issue at all.
- */
+
 const CIVIC_THRESHOLD = 0.3;
 
-/*
- * Minimum margin the best civic label must beat the best
- * non-civic label by. Prevents borderline "just barely won"
- * calls, e.g. civic 0.31 vs non-civic 0.29.
- */
+
 const CIVIC_MARGIN = 0.05;
 
-/*
- * ============================================================
- * LOAD MODEL
- * ============================================================
- */
 
 export async function loadImageModel() {
   if (imageClassifier !== null) {
@@ -99,26 +69,6 @@ export async function loadImageModel() {
   return imageClassifier;
 }
 
-/*
- * ============================================================
- * VERIFY IMAGE
- * ============================================================
- *
- * Single-pass detection:
- *
- *   1. Run CLIP ONCE over civic + non-civic labels together.
- *   2. Decide civic vs. not-civic from that one result set
- *      (threshold + margin over the best non-civic label).
- *   3. If civic, pick the category from the SAME result set —
- *      no second inference call. Confidence is renormalized
- *      over just the civic labels, which is mathematically
- *      exact because softmax renormalizes exactly under
- *      subset restriction: s_i / sum_civic(s_j) equals the
- *      score CLIP would have produced had it only been given
- *      the civic labels to begin with.
- *   4. Compare against the citizen's selected category.
- * ============================================================
- */
 
 export async function verifyImage(imageBuffer, mimeType, selectedCategory) {
   try {

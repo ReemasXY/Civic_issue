@@ -1,14 +1,16 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import Field from "./Field";
 import axios from "axios";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import errToast from "../../utils/ErrorToast";
 import successToast from "../../utils/SuccessToast";
 
-const LogInFields = ({ loginForm, updateLogin, onShowOTP }) => {
+const LogInFields = ({ loginForm, updateLogin }) => {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,10 +36,29 @@ const LogInFields = ({ loginForm, updateLogin, onShowOTP }) => {
         successToast(response.data.message);
       }
 
-      // Show OTP verification
+      // DIRECT LOGIN: Store user info and redirect immediately
+      if (response.data.user) {
+        localStorage.setItem("user_id", response.data.user.user_id);
+        localStorage.setItem("role", response.data.user.role);
+        localStorage.setItem("username", response.data.user.username);
+      }
+
+      // Redirect based on role after a short delay
       setTimeout(() => {
-        onShowOTP(loginForm.loginEmail, "login");
-      }, 1000);
+        const userRole = response.data.user?.role || localStorage.getItem("role");
+
+        if (userRole === "officer") {
+          navigate("/officer/dashboard");
+        } else {
+          navigate("/");
+        }
+      }, 1500);
+
+      // COMMENTED OUT: OTP verification flow
+      // // Show OTP verification
+      // setTimeout(() => {
+      //   onShowOTP(loginForm.loginEmail, "login");
+      // }, 1000);
     } catch (error) {
       if (error.response) {
         const errors = error.response.data.error;
@@ -124,7 +145,7 @@ const LogInFields = ({ loginForm, updateLogin, onShowOTP }) => {
         disabled={isLoading}
         className="w-full cursor-pointer rounded-lg bg-[#14233B] py-2.5 text-[13.5px] font-semibold text-white transition-all duration-200 hover:bg-[#1F8A70] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-[#14233B]"
       >
-        {isLoading ? "Sending code..." : "Log In"}
+        {isLoading ? "Logging in..." : "Log In"}
       </button>
     </form>
   );

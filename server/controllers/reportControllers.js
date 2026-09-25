@@ -142,6 +142,45 @@ export const getUserComplaints = async (req, res) => {
   }
 };
 
+/**
+ * Get recent complaints for the home page (public, no auth required)
+ * Returns: 6 most recent reports across all users
+ */
+export const getRecentComplaints = async (req, res) => {
+  try {
+    // Get 6 most recent reports from all users
+    const reportsQuery = `
+      SELECT
+        report_id,
+        title,
+        category,
+        location_short_label,
+        image_url,
+        status,
+        created_at
+      FROM reports
+      ORDER BY created_at DESC
+      LIMIT 6
+    `;
+
+    const reportsResult = await pool.query(reportsQuery);
+    const recentComplaints = reportsResult.rows;
+
+    return res.status(200).json({
+      success: true,
+      complaints: recentComplaints,
+    });
+  } catch (error) {
+    console.error("❌ Error in getRecentComplaints:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching recent complaints.",
+      details: error.message,
+    });
+  }
+};
+
 export const createReport = async (req, res) => {
   try {
     console.log("========================================");
