@@ -1,4 +1,5 @@
 import pool from "../config/dbConnection.js";
+import { sendNotificationToUser } from "../websocket/notificationSocket.js";
 
 // Statuses an officer is allowed to set a report to.
 const ALLOWED_STATUSES = ["pending", "verified", "in-progress", "resolved", "rejected"];
@@ -11,6 +12,39 @@ const STATUS_TRANSITIONS = {
   "in-progress": ["resolved"],
   resolved: [],
   rejected: [],
+};
+
+// What to write into the `notifications` table for each status an officer
+// can set. Keep `type` in sync with the CHECK constraint on that table,
+// and the title/message text in sync with STATUS_META in the citizen's
+// Notifications.jsx (once it reads from the real table instead of static
+// data), so what officers write matches what citizens see.
+const STATUS_NOTIFICATION_META = {
+  verified: {
+    type: "report_verified",
+    title: "Report Verified",
+    message: (reportTitle) =>
+      `Your report "${reportTitle}" has been verified and assigned to a department.`,
+  },
+  "in-progress": {
+    type: "report_in_progress",
+    title: "Work In Progress",
+    message: (reportTitle) =>
+      `Officers are actively working on "${reportTitle}".`,
+  },
+  resolved: {
+    type: "report_resolved",
+    title: "Report Resolved",
+    message: (reportTitle) => `Your report "${reportTitle}" has been resolved.`,
+  },
+  rejected: {
+    type: "report_rejected",
+    title: "Report Rejected",
+    message: (reportTitle, reason) =>
+      reason
+        ? `Your report "${reportTitle}" was not accepted. Reason: ${reason}`
+        : `Your report "${reportTitle}" was not accepted.`,
+  },
 };
 
 /**
@@ -361,7 +395,42 @@ export const updateComplaintStatus = async (req, res) => {
       );
     }
 
+    // Record this status change as a notification for the citizen who
+    // filed the report, so they see what the officer did and when.
+    const updatedReport = updateResult.rows[0];
+    const notificationMeta = STATUS_NOTIFICATION_META[status];
+    let insertedNotification = null;
+
+    if (notificationMeta) {
+      const message =
+        status === "rejected"
+          ? notificationMeta.message(updatedReport.title, rejection_reason?.trim())
+          : notificationMeta.message(updatedReport.title);
+
+      const notificationResult = await client.query(
+        `INSERT INTO notifications (user_id, report_id, type, title, message)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING *`,
+        [
+          updatedReport.user_id,
+          updatedReport.report_id,
+          notificationMeta.type,
+          notificationMeta.title,
+          message,
+        ]
+      );
+
+      insertedNotification = notificationResult.rows[0];
+    }
+
     await client.query("COMMIT");
+
+    // Push the new notification over WebSocket only after the commit
+    // succeeds — no point telling the citizen about something that
+    // ended up rolled back.
+    if (insertedNotification) {
+      sendNotificationToUser(insertedNotification.user_id, insertedNotification);
+    }
 
     return res.status(200).json({
       success: true,

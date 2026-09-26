@@ -4,11 +4,14 @@ import pool from "./config/dbConnection.js";
 import userAuth from "./routes/userAuth.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import officerRoutes from "./routes/officerRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import path from "path";
 import { fileURLToPath } from "url";
+import http from "http";
+import { initNotificationSocket } from "./websocket/notificationSocket.js";
 
 import {
   loadImageModel,
@@ -92,6 +95,18 @@ app.use(
 
 /*
  * ============================================================
+ * NOTIFICATION ROUTES
+ * ============================================================
+ */
+
+app.use(
+  "/api/notifications",
+  notificationRoutes
+);
+
+
+/*
+ * ============================================================
  * CLEANUP EXPIRED OTP RECORDS
  * ============================================================
  */
@@ -149,10 +164,22 @@ async function startServer() {
 
 
     /*
+     * Wrap the Express app in a plain HTTP server, so the WebSocket
+     * server can attach to the SAME port instead of needing a second
+     * one — the browser connects to ws://localhost:PORT just like it
+     * already talks to http://localhost:PORT.
+     */
+
+    const httpServer = http.createServer(app);
+
+    initNotificationSocket(httpServer);
+
+
+    /*
      * Start Express server
      */
 
-    app.listen(
+    httpServer.listen(
       PORT,
       () => {
         console.log(
