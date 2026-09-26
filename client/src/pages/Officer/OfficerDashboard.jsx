@@ -69,103 +69,103 @@ export default function OfficerDashboard() {
   const [department, setDepartment] = useState(null);
   const [noDepartment, setNoDepartment] = useState(false);
 
-  useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const response = await axios.get(
-          "http://localhost:5000/api/officer/dashboard",
-          {
-            withCredentials: true,
-          }
-        );
-
-        if (response.data.success) {
-          const { stats: apiStats, recentReports, department: officerDept } = response.data;
-
-          if (!officerDept) {
-            setNoDepartment(true);
-            return;
-          }
-
-          setDepartment(officerDept);
-
-          const pending = Number(apiStats.pending) || 0;
-          const verified = Number(apiStats.verified) || 0;
-          const inProgress = Number(apiStats.inProgress) || 0;
-          const resolved = Number(apiStats.resolved) || 0;
-
-          const total = pending + verified + inProgress + resolved;
-
-          setTotalComplaints(total);
-
-          setStats([
-            {
-              label: "Pending",
-              value: pending.toString(),
-              icon: FiClock,
-              iconColor: "text-teal-600",
-            },
-            {
-              label: "Verified",
-              value: verified.toString(),
-              icon: FiShield,
-              iconColor: "text-teal-600",
-            },
-            {
-              label: "In Progress",
-              value: inProgress.toString(),
-              icon: FiRefreshCw,
-              iconColor: "text-teal-600",
-            },
-            {
-              label: "Resolved",
-              value: resolved.toString(),
-              icon: FiCheckCircle,
-              iconColor: "text-teal-600",
-            },
-          ]);
-
-          setCompletionData([
-            {
-              name: "Resolved",
-              value: resolved,
-            },
-            {
-              name: "In Progress",
-              value: inProgress,
-            },
-            {
-              name: "Pending",
-              value: pending,
-            },
-            {
-              name: "Verified",
-              value: verified,
-            },
-          ]);
-
-          setAllComplaints(recentReports);
-
-          const formattedReports = recentReports.map((report) => ({
-            id: report.report_id,
-            title: report.title,
-            location:
-              report.location_short_label ||
-              report.location_full_label ||
-              "Location not specified",
-            status: report.status,
-            statusLabel: getStatusLabel(report.status),
-            date: formatDate(report.created_at),
-            imageUrl: `http://localhost:5000${report.image_url}`,
-          }));
-
-          setRecentComplaints(formattedReports);
+  const fetchDashboardData = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/officer/dashboard",
+        {
+          withCredentials: true,
         }
-      } catch (error) {
-        console.error("Error fetching officer dashboard data:", error);
-      }
-    };
+      );
 
+      if (response.data.success) {
+        const { stats: apiStats, recentReports, department: officerDept } = response.data;
+
+        if (!officerDept) {
+          setNoDepartment(true);
+          return;
+        }
+
+        setDepartment(officerDept);
+
+        const pending = Number(apiStats.pending) || 0;
+        const verified = Number(apiStats.verified) || 0;
+        const inProgress = Number(apiStats.inProgress) || 0;
+        const resolved = Number(apiStats.resolved) || 0;
+
+        const total = pending + verified + inProgress + resolved;
+
+        setTotalComplaints(total);
+
+        setStats([
+          {
+            label: "Pending",
+            value: pending.toString(),
+            icon: FiClock,
+            iconColor: "text-teal-600",
+          },
+          {
+            label: "Verified",
+            value: verified.toString(),
+            icon: FiShield,
+            iconColor: "text-teal-600",
+          },
+          {
+            label: "In Progress",
+            value: inProgress.toString(),
+            icon: FiRefreshCw,
+            iconColor: "text-teal-600",
+          },
+          {
+            label: "Resolved",
+            value: resolved.toString(),
+            icon: FiCheckCircle,
+            iconColor: "text-teal-600",
+          },
+        ]);
+
+        setCompletionData([
+          {
+            name: "Resolved",
+            value: resolved,
+          },
+          {
+            name: "In Progress",
+            value: inProgress,
+          },
+          {
+            name: "Pending",
+            value: pending,
+          },
+          {
+            name: "Verified",
+            value: verified,
+          },
+        ]);
+
+        setAllComplaints(recentReports);
+
+        const formattedReports = recentReports.map((report) => ({
+          id: report.report_id,
+          title: report.title,
+          location:
+            report.location_short_label ||
+            report.location_full_label ||
+            "Location not specified",
+          status: report.status,
+          statusLabel: getStatusLabel(report.status),
+          date: formatDate(report.created_at),
+          imageUrl: `http://localhost:5000${report.image_url}`,
+        }));
+
+        setRecentComplaints(formattedReports);
+      }
+    } catch (error) {
+      console.error("Error fetching officer dashboard data:", error);
+    }
+  };
+
+  useEffect(() => {
     fetchDashboardData();
   }, []);
 
@@ -219,11 +219,47 @@ export default function OfficerDashboard() {
   const handleBackToList = () => {
     setShowDetail(false);
     setSelectedComplaint(null);
+    // Refresh dashboard data to show updated statuses and stats
+    fetchDashboardData();
   };
 
   const handleViewDetails = (complaint) => {
-    setSelectedComplaint(complaint);
+    // Find the full complaint object from allComplaints
+    const fullComplaint = allComplaints.find(c => c.report_id === complaint.id);
+    setSelectedComplaint(fullComplaint || complaint);
     setShowDetail(true);
+  };
+
+  const handleStatusUpdated = (updatedReport) => {
+    // Update the selected complaint with new data
+    setSelectedComplaint(updatedReport);
+
+    // Update allComplaints list with the updated report
+    setAllComplaints(prevComplaints =>
+      prevComplaints.map(c =>
+        c.report_id === updatedReport.report_id ? updatedReport : c
+      )
+    );
+
+    // Update the formatted recent complaints list
+    const formattedReport = {
+      id: updatedReport.report_id,
+      title: updatedReport.title,
+      location:
+        updatedReport.location_short_label ||
+        updatedReport.location_full_label ||
+        "Location not specified",
+      status: updatedReport.status,
+      statusLabel: getStatusLabel(updatedReport.status),
+      date: formatDate(updatedReport.created_at),
+      imageUrl: `http://localhost:5000${updatedReport.image_url}`,
+    };
+
+    setRecentComplaints(prevComplaints =>
+      prevComplaints.map(c =>
+        c.id === updatedReport.report_id ? formattedReport : c
+      )
+    );
   };
 
   if (showDetail && selectedComplaint) {
@@ -231,6 +267,7 @@ export default function OfficerDashboard() {
       <OfficerComplaintDetail
         complaint={selectedComplaint}
         onBack={handleBackToList}
+        onStatusUpdated={handleStatusUpdated}
       />
     );
   }

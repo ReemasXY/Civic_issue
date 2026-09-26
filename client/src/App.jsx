@@ -11,6 +11,7 @@ import MyComplaints from "./pages/Citizen/MyComplaints/MyComplaints";
 import OfficerLayout from "./pages/Officer/OfficerLayout";
 import OfficerDashboard from "./pages/Officer/OfficerDashboard";
 import AssignedComplaints from "./pages/Officer/AssignedComplaints";
+import VerifiedComplaints from "./pages/Officer/VerifiedComplaints";
 
 function App() {
   const router = createBrowserRouter([
@@ -61,6 +62,10 @@ function App() {
         {
           path: "complaints",
           element: <AssignedComplaints />,
+        },
+        {
+          path: "verified-complaints",
+          element: <VerifiedComplaints />,
         },
       ],
     },

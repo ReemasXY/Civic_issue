@@ -10,7 +10,7 @@ export default function ComplaintHeader({ complaint, onBack, statusConfig }) {
         className="mb-5 flex items-center gap-2 text-sm font-medium text-teal-600 transition-colors hover:text-teal-700"
       >
         <FiArrowLeft className="h-4 w-4" />
-        Back to My Complaints
+        Back 
       </button>
 
       {/* COMPLAINT HEADER */}

@@ -8,6 +8,7 @@ export default function ComplaintsFilters({
   onCategoryChange,
   onSeverityChange,
   showCategoryFilter = true,
+  showStatusFilter = true,
 }) {
   const statusOptions = [
     { value: "all", label: "All Status" },
@@ -15,6 +16,7 @@ export default function ComplaintsFilters({
     { value: "verified", label: "Verified" },
     { value: "in-progress", label: "In Progress" },
     { value: "resolved", label: "Resolved" },
+    { value: "rejected", label: "Rejected" },
   ];
 
   const categoryOptions = [
@@ -36,12 +38,14 @@ export default function ComplaintsFilters({
 
   return (
     <div className="mb-6 flex flex-wrap gap-4">
-      <FilterDropdown
-        label="Status"
-        value={statusFilter}
-        onChange={onStatusChange}
-        options={statusOptions}
-      />
+      {showStatusFilter && (
+        <FilterDropdown
+          label="Status"
+          value={statusFilter}
+          onChange={onStatusChange}
+          options={statusOptions}
+        />
+      )}
 
       {showCategoryFilter && (
         <FilterDropdown

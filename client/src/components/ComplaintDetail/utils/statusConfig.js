@@ -77,6 +77,16 @@ export const getStatusConfig = (status) => {
       connectorColor: "bg-[#D1D7DE]",
       description: "Your complaint is pending review.",
     },
+
+    rejected: {
+      label: "Rejected",
+      icon: FiXCircle,
+      bgColor: "bg-[#DC3545]",
+      textColor: "text-white",
+      lightBg: "bg-[#FFEBEE]",
+      connectorColor: "bg-[#E57373]",
+      description: "The complaint has been rejected.",
+    },
   };
 
   return configs[status] || configs.pending;

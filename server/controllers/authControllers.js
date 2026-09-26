@@ -4,8 +4,66 @@ import pool from "../config/dbConnection.js";
 // COMMENTED OUT: OTP email verification
 // import { generateOTP, getOTPExpiry, sendOtpEmail, scheduleOTPCleanup } from "../utils/emailService.js";
 
+/**
+ * Helper: check if an email is already taken across citizens/officers/admins.
+ * Postgres can't enforce UNIQUE across separate tables, so this UNION ALL
+ * is the "join" that stands in for a single-table check.
+ */
+const emailExists = async (email) => {
+  const result = await pool.query(
+    `SELECT user_id FROM citizens WHERE email = $1
+     UNION ALL
+     SELECT user_id FROM officers WHERE email = $1
+     UNION ALL
+     SELECT user_id FROM admins WHERE email = $1`,
+    [email]
+  );
+  return result.rows.length > 0;
+};
+
+const usernameExists = async (username) => {
+  const result = await pool.query(
+    `SELECT user_id FROM citizens WHERE username = $1
+     UNION ALL
+     SELECT user_id FROM officers WHERE username = $1
+     UNION ALL
+     SELECT user_id FROM admins WHERE username = $1`,
+    [username]
+  );
+  return result.rows.length > 0;
+};
+
+const phoneExists = async (phone_number) => {
+  const result = await pool.query(
+    `SELECT user_id FROM citizens WHERE phone_number = $1
+     UNION ALL
+     SELECT user_id FROM officers WHERE phone_number = $1
+     UNION ALL
+     SELECT user_id FROM admins WHERE phone_number = $1`,
+    [phone_number]
+  );
+  return result.rows.length > 0;
+};
+
+/**
+ * Helper: find a user by email across all three role tables.
+ * Used by login. Returns the matching row (with its role) or null.
+ */
+const findUserByEmail = async (email) => {
+  const result = await pool.query(
+    `SELECT user_id, email, username, phone_number, password_hash, role FROM citizens WHERE email = $1
+     UNION ALL
+     SELECT user_id, email, username, phone_number, password_hash, role FROM officers WHERE email = $1
+     UNION ALL
+     SELECT user_id, email, username, phone_number, password_hash, role FROM admins WHERE email = $1`,
+    [email]
+  );
+  return result.rows[0] || null;
+};
+
 const registerUser = async (req, res) => {
   try {
+
     const {
       email,
       username,
@@ -13,34 +71,22 @@ const registerUser = async (req, res) => {
       password,
     } = req.body;
 
-    // Check if email already registered in users table
-    const existingEmail = await pool.query(
-      `SELECT user_id FROM users WHERE email = $1`,
-      [email]
-    );
-    if (existingEmail.rows.length > 0) {
+    // Check if email already registered (across citizens/officers/admins)
+    if (await emailExists(email)) {
       return res.status(409).json({
         error: ["Email is already registered"],
       });
     }
 
-    // Check if username already taken in users table
-    const existingUsername = await pool.query(
-      `SELECT user_id FROM users WHERE username = $1`,
-      [username]
-    );
-    if (existingUsername.rows.length > 0) {
+    // Check if username already taken (across citizens/officers/admins)
+    if (await usernameExists(username)) {
       return res.status(409).json({
         error: ["Username is already taken"],
       });
     }
 
-    // Check if phone number already registered in users table
-    const existingPhone = await pool.query(
-      `SELECT user_id FROM users WHERE phone_number = $1`,
-      [phone_number]
-    );
-    if (existingPhone.rows.length > 0) {
+    // Check if phone number already registered (across citizens/officers/admins)
+    if (await phoneExists(phone_number)) {
       return res.status(409).json({
         error: ["Phone number is already registered"],
       });
@@ -82,14 +128,15 @@ const registerUser = async (req, res) => {
     //   message: "Verification code sent to your email. Please verify to complete registration.",
     // });
 
-    // DIRECT REGISTRATION: Insert user directly into users table
+    // DIRECT REGISTRATION: public sign-up always creates a citizen account.
+    // Officer/admin accounts are provisioned separately (not through this route).
     const insertResult = await pool.query(
-      `INSERT INTO users
-        (email, username, phone_number, password_hash, role)
+      `INSERT INTO citizens
+        (email, username, phone_number, password_hash)
        VALUES
-        ($1, $2, $3, $4, $5)
+        ($1, $2, $3, $4)
        RETURNING user_id, email, username, phone_number, role`,
-      [email, username, phone_number, hashPassword, "citizen"]
+      [email, username, phone_number, hashPassword]
     );
 
     const newUser = insertResult.rows[0];
@@ -131,20 +178,14 @@ const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const result = await pool.query(
-      `SELECT user_id, email, username, phone_number, password_hash, role
-       FROM users
-       WHERE email = $1`,
-      [email]
-    );
+    // Look the user up across citizens/officers/admins
+    const user = await findUserByEmail(email);
 
-    if (result.rows.length === 0) {
+    if (!user) {
       return res.status(401).json({
         error: ["Invalid email or password"],
       });
     }
-
-    const user = result.rows[0];
 
     const isPasswordValid = await bcrypt.compare(
       password,
@@ -225,271 +266,6 @@ const loginUser = async (req, res) => {
   }
 };
 
-// COMMENTED OUT: OTP verification is disabled
-// const verifyOTP = async (req, res) => {
-//   try {
-//     const { email, otp, purpose } = req.body;
-
-//     if (!email || !otp) {
-//       return res.status(400).json({
-//         error: ["Email and OTP are required"],
-//       });
-//     }
-
-//     if (purpose === "registration") {
-//       // Check pending_registrations table
-//       const pendingResult = await pool.query(
-//         `SELECT * FROM pending_registrations WHERE email = $1`,
-//         [email]
-//       );
-
-//       if (pendingResult.rows.length === 0) {
-//         return res.status(400).json({
-//           error: ["No pending registration found for this email. Please register again."],
-//         });
-//       }
-
-//       const pending = pendingResult.rows[0];
-
-//       // Check if OTP matches
-//       if (pending.otp_code !== otp) {
-//         return res.status(400).json({
-//           error: ["Invalid OTP code. Please check and try again."],
-//         });
-//       }
-
-//       // Check if OTP has expired
-//       if (new Date() > new Date(pending.otp_expires_at)) {
-//         return res.status(400).json({
-//           error: ["OTP has expired. Please request a new one."],
-//         });
-//       }
-
-//       // Insert new user into the users table
-//       const insertResult = await pool.query(
-//         `INSERT INTO users
-//           (email, username, phone_number, password_hash, role)
-//          VALUES
-//           ($1, $2, $3, $4, $5)
-//          RETURNING user_id, email, username, phone_number, role`,
-//         [
-//           pending.email,
-//           pending.username,
-//           pending.phone_number,
-//           pending.password_hash,
-//           pending.role,
-//         ]
-//       );
-
-//       const newUser = insertResult.rows[0];
-
-//       // Remove from pending_registrations
-//       await pool.query(
-//         `DELETE FROM pending_registrations WHERE email = $1`,
-//         [email]
-//       );
-
-//       // Sign JWT token
-//       const token = jwt.sign(
-//         {
-//           user_id: newUser.user_id,
-//           username: newUser.username,
-//           role: newUser.role,
-//         },
-//         process.env.JWT_SECRET
-//       );
-
-//       // Set cookie
-//       res.cookie("token", token, {
-//         httpOnly: true,
-//         secure: false,
-//         sameSite: "lax",
-//         maxAge: 24 * 60 * 60 * 1000,
-//       });
-
-//       return res.status(201).json({
-//         message: "Account verified successfully! Welcome to CivicCare.",
-//         token,
-//         user: newUser,
-//       });
-
-//     } else if (purpose === "login") {
-//       // Check pending_logins table
-//       const pendingResult = await pool.query(
-//         `SELECT * FROM pending_logins WHERE email = $1`,
-//         [email]
-//       );
-
-//       if (pendingResult.rows.length === 0) {
-//         return res.status(400).json({
-//           error: ["No pending login session found. Please log in again."],
-//         });
-//       }
-
-//       const pending = pendingResult.rows[0];
-
-//       // Check if OTP matches
-//       if (pending.otp_code !== otp) {
-//         return res.status(400).json({
-//           error: ["Invalid OTP code. Please check and try again."],
-//         });
-//       }
-
-//       // Check if OTP has expired
-//       if (new Date() > new Date(pending.otp_expires_at)) {
-//         return res.status(400).json({
-//           error: ["OTP has expired. Please request a new one."],
-//         });
-//       }
-
-//       // Fetch user details from users table
-//       const userResult = await pool.query(
-//         `SELECT user_id, email, username, phone_number, role FROM users WHERE user_id = $1`,
-//         [pending.user_id]
-//       );
-
-//       if (userResult.rows.length === 0) {
-//         return res.status(404).json({
-//           error: ["User account not found."],
-//         });
-//       }
-
-//       const user = userResult.rows[0];
-
-//       // Remove from pending_logins
-//       await pool.query(
-//         `DELETE FROM pending_logins WHERE email = $1`,
-//         [email]
-//       );
-
-//       // Sign JWT token
-//       const token = jwt.sign(
-//         {
-//           user_id: user.user_id,
-//           username: user.username,
-//           role: user.role,
-//         },
-//         process.env.JWT_SECRET
-//       );
-
-//       // Set cookie
-//       res.cookie("token", token, {
-//         httpOnly: true,
-//         secure: false,
-//         sameSite: "lax",
-//         maxAge: 24 * 60 * 60 * 1000,
-//       });
-
-//       return res.status(200).json({
-//         message: "Login successful! Welcome back.",
-//         token,
-//         user,
-//       });
-
-//     } else {
-//       return res.status(400).json({
-//         error: ["Invalid verification purpose specified."],
-//       });
-//     }
-
-//   } catch (error) {
-//     console.error("OTP verification error:", error);
-//     return res.status(500).json({
-//       error: ["Internal server error during verification"],
-//     });
-//   }
-// };
-
-// COMMENTED OUT: Resend OTP is disabled
-// const resendOTP = async (req, res) => {
-//   try {
-//     const { email, purpose } = req.body;
-
-//     if (!email) {
-//       return res.status(400).json({
-//         error: ["Email is required"],
-//       });
-//     }
-
-//     const otpCode = generateOTP();
-//     const otpExpiresAt = getOTPExpiry();
-
-//     if (purpose === "registration") {
-//       // Check if registration is pending
-//       const pendingResult = await pool.query(
-//         `SELECT * FROM pending_registrations WHERE email = $1`,
-//         [email]
-//       );
-
-//       if (pendingResult.rows.length === 0) {
-//         return res.status(404).json({
-//           error: ["No pending registration found for this email. Please register again."],
-//         });
-//       }
-
-//       // Update with new OTP and expiry
-//       await pool.query(
-//         `UPDATE pending_registrations
-//          SET otp_code = $1, otp_expires_at = $2, created_at = CURRENT_TIMESTAMP
-//          WHERE email = $3`,
-//         [otpCode, otpExpiresAt, email]
-//       );
-
-//       // Schedule cleanup after 5 minutes
-//       scheduleOTPCleanup(email, "pending_registrations");
-
-//       // Send email
-//       await sendOtpEmail(email, otpCode, "registration");
-
-//       return res.status(200).json({
-//         message: "A new verification code has been sent to your email.",
-//       });
-
-//     } else if (purpose === "login") {
-//       // Check if login is pending
-//       const pendingResult = await pool.query(
-//         `SELECT * FROM pending_logins WHERE email = $1`,
-//         [email]
-//       );
-
-//       if (pendingResult.rows.length === 0) {
-//         return res.status(404).json({
-//           error: ["No pending login session found. Please log in again."],
-//         });
-//       }
-
-//       // Update with new OTP and expiry
-//       await pool.query(
-//         `UPDATE pending_logins
-//          SET otp_code = $1, otp_expires_at = $2, created_at = CURRENT_TIMESTAMP
-//          WHERE email = $3`,
-//         [otpCode, otpExpiresAt, email]
-//       );
-
-//       // Schedule cleanup after 5 minutes
-//       scheduleOTPCleanup(email, "pending_logins");
-
-//       // Send email
-//       await sendOtpEmail(email, otpCode, "login");
-
-//       return res.status(200).json({
-//         message: "A new verification code has been sent to your email.",
-//       });
-
-//     } else {
-//       return res.status(400).json({
-//         error: ["Invalid purpose specified."],
-//       });
-//     }
-
-//   } catch (error) {
-//     console.error("Resend OTP error:", error);
-//     return res.status(500).json({
-//       error: ["Failed to resend verification code. Please try again."],
-//     });
-//   }
-// };
-
 const getUser = async (req, res) => {
   try {
     // Prevent the browser (and bfcache/back-nav) from ever replaying
@@ -533,6 +309,4 @@ const logout = async (req, res) => {
   }
 };
 
-// COMMENTED OUT: OTP functions are no longer exported
-// export { registerUser, loginUser, getUser, logout, verifyOTP, resendOTP };
 export { registerUser, loginUser, getUser, logout };

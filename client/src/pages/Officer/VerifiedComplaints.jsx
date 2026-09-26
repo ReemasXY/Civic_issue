@@ -1,28 +1,28 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
-import ComplaintsFilters from "../../components/ComplaintsFilter/ComplaintsFilters";
+import FilterDropdown from "../../components/ComplaintsFilter/FilterDropdown";
 import ComplaintCard from "../../components/ComplaintsFilter/ComplaintCard";
 import EmptyState from "../../components/ComplaintsFilter/EmptyState";
 import OfficerComplaintDetail from "./OfficerComplaintDetail";
 
-// Only pending complaints are shown on this page — status filtering
-// is intentionally not exposed to the officer here.
-const PENDING_STATUS = "pending";
+// Only verified, in-progress, and resolved complaints are shown on this page
+const VERIFIED_STATUSES = ["verified", "in-progress", "resolved"];
 
 // Severity sort order used whenever "All Severity" is selected —
 // most severe complaints surface first by default.
 const SEVERITY_ORDER = { critical: 1, high: 2, medium: 3, low: 4 };
 
-export default function AssignedComplaints() {
+export default function VerifiedComplaints() {
   const [complaints, setComplaints] = useState([]);
   const [filteredComplaints, setFilteredComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [statusFilter, setStatusFilter] = useState("verified");
   const [severityFilter, setSeverityFilter] = useState("all");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [department, setDepartment] = useState(null);
 
-  const fetchAssignedComplaints = async () => {
+  const fetchVerifiedComplaints = async () => {
     try {
       const response = await axios.get(
         "http://localhost:5000/api/officer/complaints",
@@ -36,21 +36,26 @@ export default function AssignedComplaints() {
         setDepartment(response.data.department);
       }
     } catch (error) {
-      console.error("Error fetching assigned complaints:", error);
+      console.error("Error fetching verified complaints:", error);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchAssignedComplaints();
+    fetchVerifiedComplaints();
   }, []);
 
   useEffect(() => {
-    // Always restrict to pending complaints first.
-    let filtered = complaints.filter((c) => c.status === PENDING_STATUS);
+    // Filter to only verified, in-progress, and resolved complaints
+    let filtered = complaints.filter((c) =>
+      VERIFIED_STATUSES.includes(c.status)
+    );
 
-    // Then apply the officer's chosen severity filter, if any.
+    // Apply status filter (no "all" option, always filter by specific status)
+    filtered = filtered.filter((c) => c.status === statusFilter);
+
+    // Apply severity filter if not "all"
     if (severityFilter !== "all") {
       filtered = filtered.filter(
         (c) => c.severity_level?.toLowerCase() === severityFilter
@@ -65,7 +70,7 @@ export default function AssignedComplaints() {
     });
 
     setFilteredComplaints(filtered);
-  }, [severityFilter, complaints]);
+  }, [statusFilter, severityFilter, complaints]);
 
   const handleViewDetails = (complaint) => {
     setSelectedComplaint(complaint);
@@ -75,8 +80,6 @@ export default function AssignedComplaints() {
   const handleBackToList = () => {
     setShowDetail(false);
     setSelectedComplaint(null);
-    // Refresh the list to show updated statuses
-    fetchAssignedComplaints();
   };
 
   if (showDetail && selectedComplaint) {
@@ -84,17 +87,9 @@ export default function AssignedComplaints() {
       <OfficerComplaintDetail
         complaint={selectedComplaint}
         onBack={handleBackToList}
-        onStatusUpdated={(updatedReport) => {
-          // Update the selected complaint with the new report data
-          // so when user clicks back, they see the updated status
-          setSelectedComplaint(updatedReport);
-
-          // Also update the complaints list
-          setComplaints(prevComplaints =>
-            prevComplaints.map(c =>
-              c.report_id === updatedReport.report_id ? updatedReport : c
-            )
-          );
+        onStatusUpdated={() => {
+          // Refetch complaints after status update
+          fetchVerifiedComplaints();
         }}
       />
     );
@@ -105,22 +100,39 @@ export default function AssignedComplaints() {
       {/* Header */}
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold text-slate-900">
-          Pending Complaints
+          Verified Complaints
         </h1>
         <p className="text-slate-600">
-          Pending complaints assigned to{" "}
+          Complaints that are verified, in progress, or resolved in{" "}
           {department && <span className="font-semibold">{department}</span>}
-          , sorted by severity
         </p>
       </div>
 
       {/* Filters */}
-      <ComplaintsFilters
-        severityFilter={severityFilter}
-        onSeverityChange={setSeverityFilter}
-        showCategoryFilter={false}
-        showStatusFilter={false}
-      />
+      <div className="mb-6 flex flex-wrap gap-4">
+        <FilterDropdown
+          label="Status"
+          value={statusFilter}
+          onChange={setStatusFilter}
+          options={[
+            { value: "verified", label: "Verified" },
+            { value: "in-progress", label: "In Progress" },
+            { value: "resolved", label: "Resolved" },
+          ]}
+        />
+        <FilterDropdown
+          label="Severity"
+          value={severityFilter}
+          onChange={setSeverityFilter}
+          options={[
+            { value: "all", label: "All Severity" },
+            { value: "critical", label: "Critical" },
+            { value: "high", label: "High" },
+            { value: "medium", label: "Medium" },
+            { value: "low", label: "Low" },
+          ]}
+        />
+      </div>
 
       {/* Complaints Grid */}
       {loading ? (
