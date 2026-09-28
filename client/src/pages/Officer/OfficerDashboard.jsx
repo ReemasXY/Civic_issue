@@ -274,7 +274,7 @@ export default function OfficerDashboard() {
 
   if (noDepartment) {
     return (
-      <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8 lg:px-10">
         <DashboardHeader username={username} />
         <div className="flex items-center justify-center py-16">
           <div className="text-center">
@@ -292,8 +292,8 @@ export default function OfficerDashboard() {
   }
 
   return (
-    <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8">
-      <DashboardHeader username={username} />
+    <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8 lg:px-10">
+      <DashboardHeader username={username} showNotifications={false}/>
 
       <div className="mb-8 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => (

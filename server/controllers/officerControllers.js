@@ -14,6 +14,10 @@ const STATUS_TRANSITIONS = {
   rejected: [],
 };
 
+// Only these statuses make an officer the handler of a report.
+// Later steps (in-progress, resolved) never change who the handler is.
+const HANDLER_ASSIGNING_STATUSES = ["verified", "rejected"];
+
 // What to write into the `notifications` table for each status an officer
 // can set. Keep `type` in sync with the CHECK constraint on that table,
 // and the title/message text in sync with STATUS_META in the citizen's
@@ -40,16 +44,15 @@ const STATUS_NOTIFICATION_META = {
   rejected: {
     type: "report_rejected",
     title: "Report Rejected",
-    message: (reportTitle, reason) =>
-      reason
-        ? `Your report "${reportTitle}" was not accepted. Reason: ${reason}`
-        : `Your report "${reportTitle}" was not accepted.`,
+    message: (reportTitle) =>
+      `Your report "${reportTitle}" was not accepted. Click to view details.`,
   },
 };
 
 /**
  * Get dashboard data for officers
- * Returns complaints assigned to the officer's department
+ * Returns complaints in the officer's department that are either still
+ * unhandled (handled_by IS NULL) or handled by this officer.
  */
 export const getOfficerDashboardData = async (req, res) => {
   try {
@@ -102,7 +105,8 @@ export const getOfficerDashboardData = async (req, res) => {
       });
     }
 
-    // Get statistics grouped by status for this department
+    // Get statistics grouped by status. A report counts for this officer
+    // only if nobody is handling it yet, or this officer is the handler.
     const statsQuery = `
       SELECT
         COUNT(*) FILTER (WHERE status = 'pending') as pending,
@@ -112,12 +116,13 @@ export const getOfficerDashboardData = async (req, res) => {
         COUNT(*) as total
       FROM reports
       WHERE assigned_department = $1
+        AND (handled_by IS NULL OR handled_by = $2)
     `;
 
-    const statsResult = await pool.query(statsQuery, [department]);
+    const statsResult = await pool.query(statsQuery, [department, user_id]);
     const stats = statsResult.rows[0];
 
-    // Get recent reports (up to 3 most recent) for this department, regardless of status
+    // Get recent reports (up to 3 most recent) visible to this officer
     const reportsQuery = `
   SELECT
     report_id,
@@ -132,15 +137,17 @@ export const getOfficerDashboardData = async (req, res) => {
     status,
     severity_level,
     assigned_department,
+    handled_by,
     created_at,
     updated_at
   FROM reports
   WHERE assigned_department = $1
+    AND (handled_by IS NULL OR handled_by = $2)
   ORDER BY created_at DESC
   LIMIT 3
 `;
 
-    const reportsResult = await pool.query(reportsQuery, [department]);
+    const reportsResult = await pool.query(reportsQuery, [department, user_id]);
     const recentReports = reportsResult.rows;
 
     return res.status(200).json({
@@ -167,8 +174,8 @@ export const getOfficerDashboardData = async (req, res) => {
 };
 
 /**
- * Get all complaints assigned to the officer's department
- * Returns all complaints for the department (not just recent 3)
+ * Get all complaints visible to the officer: unhandled ones in their
+ * department, plus every complaint this officer is handling.
  */
 export const getOfficerComplaints = async (req, res) => {
   try {
@@ -214,7 +221,7 @@ export const getOfficerComplaints = async (req, res) => {
       });
     }
 
-    // Get all complaints for this department
+    // Get all complaints visible to this officer
     const complaintsQuery = `
       SELECT
         report_id,
@@ -229,14 +236,16 @@ export const getOfficerComplaints = async (req, res) => {
         status,
         severity_level,
         assigned_department,
+        handled_by,
         created_at,
         updated_at
       FROM reports
       WHERE assigned_department = $1
+        AND (handled_by IS NULL OR handled_by = $2)
       ORDER BY created_at DESC
     `;
 
-    const complaintsResult = await pool.query(complaintsQuery, [department]);
+    const complaintsResult = await pool.query(complaintsQuery, [department, user_id]);
     const complaints = complaintsResult.rows;
 
     return res.status(200).json({
@@ -256,13 +265,17 @@ export const getOfficerComplaints = async (req, res) => {
 };
 
 /**
- * Update the status of a complaint assigned to the officer's department.
+ * Update the status of a complaint in the officer's department.
  * PATCH /api/officer/complaints/:id/status
  * When status is "rejected", body must include rejection_reason —
  * that reason gets logged in `rejected_complaints`.
  *
  * Status changes must also follow STATUS_TRANSITIONS — a report can only
  * move to a status that's a valid "next step" from its current status.
+ *
+ * Handler rules: an unhandled report (handled_by IS NULL) can be verified
+ * or rejected by any officer in the department, and whoever does so becomes
+ * its handler. After that, only the handler can change its status.
  */
 export const updateComplaintStatus = async (req, res) => {
   const client = await pool.connect();
@@ -326,12 +339,15 @@ export const updateComplaintStatus = async (req, res) => {
     await client.query("BEGIN");
 
     // Look up the report's current status first — this is what lets us
-    // enforce the transition rules below, and it's scoped to the officer's
-    // own department so a mismatch gives a clean 404.
+    // enforce the transition rules below. It's scoped to the officer's
+    // department AND to reports that are unhandled or handled by this
+    // officer, so another officer's report gives a clean 404.
     const statusCheckResult = await client.query(
       `SELECT status FROM reports
-       WHERE report_id = $1 AND assigned_department = $2`,
-      [report_id, department]
+       WHERE report_id = $1
+         AND assigned_department = $2
+         AND (handled_by IS NULL OR handled_by = $3)`,
+      [report_id, department, user_id]
     );
 
     if (statusCheckResult.rows.length === 0) {
@@ -339,7 +355,8 @@ export const updateComplaintStatus = async (req, res) => {
 
       return res.status(404).json({
         success: false,
-        error: "Complaint not found in your department.",
+        error:
+          "Complaint not found, or it is being handled by another officer.",
       });
     }
 
@@ -363,13 +380,25 @@ export const updateComplaintStatus = async (req, res) => {
       });
     }
 
-    // Now update the report since the transition is valid
+    // Verifying or rejecting makes this officer the handler. For any other
+    // status we pass null, so COALESCE keeps the existing handler.
+    const handlerId = HANDLER_ASSIGNING_STATUSES.includes(status)
+      ? user_id
+      : null;
+
+    // Now update the report since the transition is valid. The handled_by
+    // condition in WHERE also protects against two officers verifying the
+    // same report at the same moment — only the first one gets a row back.
     const updateResult = await client.query(
       `UPDATE reports
-       SET status = $1, updated_at = CURRENT_TIMESTAMP
-       WHERE report_id = $2 AND assigned_department = $3
+       SET status = $1,
+           handled_by = COALESCE(handled_by, $4::uuid),
+           updated_at = CURRENT_TIMESTAMP
+       WHERE report_id = $2
+         AND assigned_department = $3
+         AND (handled_by IS NULL OR handled_by = $5)
        RETURNING *`,
-      [status, report_id, department]
+      [status, report_id, department, handlerId, user_id]
     );
 
     if (updateResult.rows.length === 0) {
@@ -377,7 +406,8 @@ export const updateComplaintStatus = async (req, res) => {
 
       return res.status(404).json({
         success: false,
-        error: "Complaint not found in your department.",
+        error:
+          "Complaint not found, or it is being handled by another officer.",
       });
     }
 
@@ -402,10 +432,7 @@ export const updateComplaintStatus = async (req, res) => {
     let insertedNotification = null;
 
     if (notificationMeta) {
-      const message =
-        status === "rejected"
-          ? notificationMeta.message(updatedReport.title, rejection_reason?.trim())
-          : notificationMeta.message(updatedReport.title);
+      const message = notificationMeta.message(updatedReport.title);
 
       const notificationResult = await client.query(
         `INSERT INTO notifications (user_id, report_id, type, title, message)

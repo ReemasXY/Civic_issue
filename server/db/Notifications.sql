@@ -22,7 +22,6 @@ CREATE TABLE notifications (
     -- keep these values in sync with STATUS_META in Notifications.jsx.
     type VARCHAR(30) NOT NULL
         CHECK (type IN (
-            'report_submitted',
             'report_verified',
             'report_in_progress',
             'report_resolved',

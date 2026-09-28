@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import { useOutletContext } from "react-router";
 import axios from "axios";
 import {
   FiClock,
@@ -9,6 +10,7 @@ import {
   FiCheck,
 } from "react-icons/fi";
 import successToast from "../../utils/SuccessToast";
+import ComplaintDetail from "./MyComplaints/ComplaintDetail";
 
 // Maps each notification `type` from the database to the icon/color this
 // UI already used for static data. Add an entry here if a new `type`
@@ -76,6 +78,7 @@ const mapNotification = (n) => {
 
   return {
     id: n.notification_id,
+    reportId: n.report_id, // Add report_id to the mapped notification
     group,
     icon: meta.icon,
     iconColor: meta.iconColor,
@@ -89,7 +92,10 @@ const mapNotification = (n) => {
 export default function Notifications() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showDetail, setShowDetail] = useState(false);
   const wsRef = useRef(null);
+  const { decrementUnreadCount, clearUnreadCount } = useOutletContext() || {};
 
   const fetchNotifications = async () => {
     try {
@@ -148,12 +154,21 @@ export default function Notifications() {
     };
   }, []);
 
-  const handleMarkAsRead = async (id) => {
+  const handleMarkAsRead = async (id, reportId) => {
+    // Check if notification was already read
+    const notification = notifications.find((n) => n.id === id);
+    const wasUnread = notification && !notification.read;
+
     // Update immediately for a responsive feel; the request still runs
     // in the background against the real record.
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
+
+    // Update the sidebar badge count
+    if (wasUnread && decrementUnreadCount) {
+      decrementUnreadCount();
+    }
 
     try {
       await axios.patch(
@@ -161,13 +176,52 @@ export default function Notifications() {
         {},
         { withCredentials: true }
       );
+
+      // Fetch the full report details
+      if (reportId) {
+        await fetchReportDetails(reportId);
+      }
     } catch (error) {
       console.error("Error marking notification as read:", error);
     }
   };
 
+  const fetchReportDetails = async (reportId) => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/reports/user",
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const report = response.data.reports.find(
+          (r) => r.report_id === reportId
+        );
+
+        if (report) {
+          setSelectedReport(report);
+          setShowDetail(true);
+        } else {
+          console.error("Report not found");
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching report details:", error);
+    }
+  };
+
+  const handleBackToNotifications = () => {
+    setShowDetail(false);
+    setSelectedReport(null);
+  };
+
   const handleMarkAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+
+    // Clear the sidebar badge count
+    if (clearUnreadCount) {
+      clearUnreadCount();
+    }
 
     try {
       await axios.patch(
@@ -183,8 +237,18 @@ export default function Notifications() {
   const unreadCount = notifications.filter((n) => !n.read).length;
   const groupedNotifications = groupNotifications(notifications);
 
+  // Show complaint detail if a report is selected
+  if (showDetail && selectedReport) {
+    return (
+      <ComplaintDetail
+        complaint={selectedReport}
+        onBack={handleBackToNotifications}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen w-full bg-slate-50 px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen w-full bg-slate-50 px-4 py-6 sm:px-6 lg:p-8 lg:px-10">
       <div className="mx-auto max-w-6xl">
 
         {/* Header */}
@@ -313,7 +377,7 @@ export default function Notifications() {
                           {/* View */}
                           <button
                             type="button"
-                            onClick={() => handleMarkAsRead(notification.id)}
+                            onClick={() => handleMarkAsRead(notification.id, notification.reportId)}
                             className="shrink-0 cursor-pointer rounded-full border border-slate-200 bg-white px-4 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-200 hover:border-teal-200 hover:bg-teal-50 hover:text-teal-700"
                           >
                             View

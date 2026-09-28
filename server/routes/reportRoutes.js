@@ -6,7 +6,7 @@ import {
     verifyImage,
 } from "../utils/verifyImage.js";
 
-import { createReport, getDashboardData, getUserComplaints, getRecentComplaints } from "../controllers/reportControllers.js";
+import { createReport, getDashboardData, getUserComplaints, getRecentComplaints, getRejectionReason } from "../controllers/reportControllers.js";
 
 import { checkToken } from "../middleware/checkToken.js";
 
@@ -71,6 +71,21 @@ router.get(
 router.get(
     "/recent",
     getRecentComplaints
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: GET REJECTION REASON
+ * ============================================================
+ * GET /api/reports/:reportId/rejection
+ * Fetches rejection reason for a specific report
+ */
+
+router.get(
+    "/:reportId/rejection",
+    checkToken,
+    getRejectionReason
 );
 
 

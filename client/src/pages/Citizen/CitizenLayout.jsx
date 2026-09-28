@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Outlet } from "react-router";
+import { useState, useEffect, useRef } from "react";
+import { Outlet, useLocation } from "react-router";
 import {
   FiHome,
   FiPlusCircle,
@@ -8,16 +8,98 @@ import {
   FiBell,
 } from "react-icons/fi";
 import Sidebar from "../../components/Sidebar";
+import axios from "axios";
 
 export default function CitizenLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const wsRef = useRef(null);
+  const location = useLocation();
+
+  // Fetch initial unread count
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await axios.get(
+        "http://localhost:5000/api/notifications",
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        const unread = response.data.notifications.filter((n) => !n.is_read).length;
+        setUnreadCount(unread);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUnreadCount();
+  }, []);
+
+  // WebSocket connection for real-time updates
+  useEffect(() => {
+    const ws = new WebSocket("ws://localhost:5000");
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      console.log("🔌 CitizenLayout: WebSocket connected");
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+
+        if (payload.type === "notification") {
+          // Increment unread count
+          setUnreadCount((prev) => prev + 1);
+        }
+      } catch (error) {
+        console.error("Error handling WebSocket message:", error);
+      }
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    ws.onclose = () => {
+      console.log("❌ CitizenLayout: WebSocket closed");
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, []);
+
+  // Refresh count when navigating to notifications page
+  useEffect(() => {
+    if (location.pathname === "/citizen/notifications") {
+      // Small delay to let the notifications page mark items as read
+      setTimeout(fetchUnreadCount, 500);
+    }
+  }, [location.pathname]);
+
+  // Functions to update unread count from child components
+  const decrementUnreadCount = () => {
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+  };
+
+  const clearUnreadCount = () => {
+    setUnreadCount(0);
+  };
 
   const navItems = [
     { path: "/citizen/dashboard", icon: FiHome, label: "Dashboard" },
     { path: "/citizen/report", icon: FiPlusCircle, label: "Report Issue" },
     { path: "/citizen/my-complaints", icon: FiFileText, label: "My Complaints" },
     // { path: "/citizen/nearby", icon: FiMapPin, label: "Nearby Complaints" },
-    { path: "/citizen/notifications", icon: FiBell, label: "Notifications" },
+    {
+      path: "/citizen/notifications",
+      icon: FiBell,
+      label: "Notifications",
+      badge: unreadCount
+    },
   ];
 
   return (
@@ -73,7 +155,7 @@ export default function CitizenLayout() {
 
       {/* Main Content */}
       <main className="w-full pt-[57px] lg:ml-[260px] lg:pt-0">
-        <Outlet />
+        <Outlet context={{ decrementUnreadCount, clearUnreadCount }} />
       </main>
     </div>
   );

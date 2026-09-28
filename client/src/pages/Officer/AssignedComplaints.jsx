@@ -101,7 +101,7 @@ export default function AssignedComplaints() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-white p-6">
+    <div className="min-h-screen w-full bg-white p-6 lg:p-8 lg:px-10">
       {/* Header */}
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold text-slate-900">

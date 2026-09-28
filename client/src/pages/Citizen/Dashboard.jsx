@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 import {
   FiClock,
   FiRefreshCw,
@@ -6,6 +7,7 @@ import {
   FiShield,
 } from "react-icons/fi";
 import axios from "axios";
+
 import ComplaintDetail from "./MyComplaints/ComplaintDetail";
 import DashboardHeader from "../../components/Dashboard/DashboardHeader";
 import StatsCard from "../../components/Dashboard/StatsCard";
@@ -14,6 +16,7 @@ import ComplaintCompletionChart from "../../components/Dashboard/ComplaintComple
 
 export default function Dashboard() {
   const username = localStorage.getItem("username") || "User";
+  const navigate = useNavigate();
 
   const [stats, setStats] = useState([
     {
@@ -66,6 +69,27 @@ export default function Dashboard() {
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
   const [allComplaints, setAllComplaints] = useState([]);
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const getStatusLabel = (status) => {
+    const labels = {
+      pending: "Pending",
+      verified: "Verified",
+      "in-progress": "In Progress",
+      resolved: "Resolved",
+    };
+
+    return labels[status] || status;
+  };
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -135,7 +159,6 @@ export default function Dashboard() {
             },
           ]);
 
-          // Store all report data for detailed view
           setAllComplaints(recentReports);
 
           const formattedReports = recentReports.map((report) => ({
@@ -161,27 +184,6 @@ export default function Dashboard() {
     fetchDashboardData();
   }, []);
 
-  const formatDate = (dateString) => {
-    const date = new Date(dateString);
-
-    return date.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
-  const getStatusLabel = (status) => {
-    const labels = {
-      pending: "Pending",
-      verified: "Verified",
-      "in-progress": "In Progress",
-      resolved: "Resolved",
-    };
-
-    return labels[status] || status;
-  };
-
   const getStatusStyles = (status) => {
     switch (status) {
       case "in-progress":
@@ -202,10 +204,10 @@ export default function Dashboard() {
   };
 
   const chartColors = [
-    "#22C55E", // Green - Resolved
-    "#F97316", // Orange - In Progress
-    "#EAB308", // Yellow - Pending
-    "#3B82F6", // Blue - Verified
+    "#22C55E",
+    "#F97316",
+    "#EAB308",
+    "#3B82F6",
   ];
 
   const handleBackToList = () => {
@@ -228,8 +230,10 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8">
-      <DashboardHeader username={username} />
+    <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8 lg:px-10">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <DashboardHeader username={username} />
+      </div>
 
       <div className="mb-8 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {stats.map((stat, index) => (

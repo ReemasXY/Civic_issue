@@ -62,6 +62,11 @@ export default function Sidebar({
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
+              // item.badge > 0 always evaluates to a real boolean, even
+              // when item.badge is 0 or undefined — avoids the JSX
+              // pitfall where `0 && (...)` renders a literal "0" instead
+              // of nothing.
+              const hasBadge = item.badge > 0;
 
               return (
                 <button
@@ -81,7 +86,16 @@ export default function Sidebar({
                     }`}
                   />
 
-                  <span>{item.label}</span>
+                  <span className="flex-1 text-left">{item.label}</span>
+
+                  {hasBadge && (
+                    <div className="flex items-center gap-2 rounded-full bg-teal-50 px-2.5 py-1">
+                      <span className="h-2 w-2 rounded-full bg-teal-500" />
+                      <span className="text-xs font-semibold text-teal-700">
+                        {item.badge > 99 ? "99+" : item.badge}
+                      </span>
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -152,6 +166,10 @@ export default function Sidebar({
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = location.pathname === item.path;
+                  // Same fix as the desktop block above: a direct
+                  // comparison always yields a boolean, so a badge of 0
+                  // never leaks through as a rendered "0".
+                  const hasBadge = item.badge > 0;
 
                   return (
                     <button
@@ -174,7 +192,16 @@ export default function Sidebar({
                         }`}
                       />
 
-                      <span>{item.label}</span>
+                      <span className="flex-1 text-left">{item.label}</span>
+
+                      {hasBadge && (
+                        <div className="flex items-center gap-2 rounded-full bg-teal-50 px-2.5 py-1">
+                          <span className="h-2 w-2 rounded-full bg-teal-500" />
+                          <span className="text-xs font-semibold text-teal-700">
+                            {item.badge > 99 ? "99+" : item.badge}
+                          </span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}

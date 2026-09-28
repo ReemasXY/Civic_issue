@@ -318,3 +318,67 @@ export const createReport = async (req, res) => {
     });
   }
 };
+
+/**
+ * Get rejection reason for a specific report
+ * Returns: rejection reason from rejected_complaints table
+ */
+export const getRejectionReason = async (req, res) => {
+  try {
+    const { reportId } = req.params;
+    const user_id = req.user?.user_id;
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated. Please log in.",
+      });
+    }
+
+    // First verify that this report belongs to the user
+    const reportQuery = `
+      SELECT user_id FROM reports WHERE report_id = $1
+    `;
+    const reportResult = await pool.query(reportQuery, [reportId]);
+
+    if (reportResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Report not found.",
+      });
+    }
+
+    if (reportResult.rows[0].user_id !== user_id) {
+      return res.status(403).json({
+        success: false,
+        error: "You do not have permission to view this report.",
+      });
+    }
+
+    // Fetch rejection reason
+    const rejectionQuery = `
+      SELECT reason FROM rejected_complaints WHERE report_id = $1
+    `;
+    const rejectionResult = await pool.query(rejectionQuery, [reportId]);
+
+    if (rejectionResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "No rejection reason found for this report.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      rejectionReason: rejectionResult.rows[0].reason,
+    });
+  } catch (error) {
+    console.error("❌ Error in getRejectionReason:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching rejection reason.",
+      details: error.message,
+    });
+  }
+};
