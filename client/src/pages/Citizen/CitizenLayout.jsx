@@ -5,6 +5,7 @@ import {
   FiPlusCircle,
   FiFileText,
   FiMapPin,
+  FiStar,
   FiBell,
 } from "react-icons/fi";
 import Sidebar from "../../components/Sidebar";
@@ -100,6 +101,7 @@ export default function CitizenLayout() {
       label: "Notifications",
       badge: unreadCount
     },
+    { path: "/citizen/reviews", icon: FiStar, label: "Reviews" },
   ];
 
   return (

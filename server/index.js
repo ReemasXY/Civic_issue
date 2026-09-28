@@ -5,6 +5,7 @@ import userAuth from "./routes/userAuth.js";
 import reportRoutes from "./routes/reportRoutes.js";
 import officerRoutes from "./routes/officerRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import reviewRoutes from "./routes/reviewRoutes.js";
 
 import cors from "cors";
 import cookieParser from "cookie-parser";
@@ -102,6 +103,11 @@ app.use(
 app.use(
   "/api/notifications",
   notificationRoutes
+);
+
+app.use(
+  "/api/reviews",
+  reviewRoutes
 );
 
 
