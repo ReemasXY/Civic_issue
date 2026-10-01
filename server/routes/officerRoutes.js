@@ -1,5 +1,6 @@
 import express from "express";
 import { getOfficerDashboardData, getOfficerComplaints, updateComplaintStatus } from "../controllers/officerControllers.js";
+import { getOfficerProfile } from "../controllers/profileControllers.js";
 import { checkToken } from "../middleware/checkToken.js";
 
 const router = express.Router();
@@ -21,5 +22,12 @@ router.get("/complaints", checkToken, getOfficerComplaints);
  * Updates the status of a complaint assigned to the officer's department
  */
 router.patch("/complaints/:id/status", checkToken, updateComplaintStatus);
+
+/**
+ * GET /api/officer/profile
+ * Fetches the officer's profile: details, average rating, rating breakdown,
+ * most common feedback tags, and recent reviews
+ */
+router.get("/profile", checkToken, getOfficerProfile);
 
 export default router;

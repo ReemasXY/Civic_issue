@@ -14,6 +14,9 @@ import AssignedComplaints from "./pages/Officer/AssignedComplaints";
 import VerifiedComplaints from "./pages/Officer/VerifiedComplaints";
 import Notifications from "./pages/Citizen/Notifications";
 import Reviews from "./pages/Citizen/Reviews";
+import OfficerProfile from "./pages/Officer/OfficerProfile";
+import AdminLayout from "./pages/Admin/AdminLayout";
+import AdminDashboard from "./pages/Admin/AdminDashboard";
 
 function App() {
   const router = createBrowserRouter([
@@ -76,6 +79,20 @@ function App() {
         {
           path: "verified-complaints",
           element: <VerifiedComplaints />,
+        },
+          {
+          path: "profile",
+          element: <OfficerProfile />,
+        }
+      ],
+    },
+        {
+      path: "/admin",
+      element: <AdminLayout />,
+      children: [
+        {
+          path: "overview",
+          element: <AdminDashboard />,
         },
       ],
     },

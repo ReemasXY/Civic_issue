@@ -1,27 +1,26 @@
 import { useState } from "react";
 import { Outlet } from "react-router";
-import {
-  FiHome,
-  FiFileText,
-  FiCheckCircle,
-} from "react-icons/fi";
+import { FiGrid, FiFileText, FiUsers, FiHome as FiBuilding } from "react-icons/fi";
 import Sidebar from "../../components/Sidebar";
 
-export default function OfficerLayout() {
+// Same shell as CitizenLayout / OfficerLayout: shared <Sidebar />,
+// same mobile header, same page background.
+export default function AdminLayout() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { path: "/officer/dashboard", icon: FiHome, label: "Dashboard" },
-    { path: "/officer/complaints", icon: FiFileText, label: "Pending Complaints" },
-    { path: "/officer/verified-complaints", icon: FiCheckCircle, label: "Verified Complaints" },
+    { path: "/admin/overview", icon: FiGrid, label: "Overview" },
+    { path: "/admin/complaints", icon: FiFileText, label: "All complaints" },
+    { path: "/admin/officers", icon: FiUsers, label: "Officers" },
+    { path: "/admin/departments", icon: FiBuilding, label: "Departments" },
   ];
 
   return (
     <div className="flex min-h-screen bg-[#F7F9FB]">
-      {/* Sidebar - Responsive */}
+      {/* Sidebar - Responsive (shared with citizen & officer) */}
       <Sidebar
         navItems={navItems}
-        userRole="officer"
+        userRole="admin"
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
       />

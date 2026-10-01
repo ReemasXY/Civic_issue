@@ -13,6 +13,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import http from "http";
 import { initNotificationSocket } from "./websocket/notificationSocket.js";
+import adminRoutes from "./routes/adminRoutes.js";
 
 import {
   loadImageModel,
@@ -116,6 +117,10 @@ app.use(
  * CLEANUP EXPIRED OTP RECORDS
  * ============================================================
  */
+app.use(
+  "/api/admin",
+  adminRoutes
+);
 
 (async () => {
 

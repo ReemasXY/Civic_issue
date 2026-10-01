@@ -1,4 +1,5 @@
 import { useNavigate, useLocation } from "react-router";
+import { FiUser, FiLogOut } from "react-icons/fi";
 import axios from "axios";
 import successToast from "../utils/SuccessToast";
 
@@ -10,6 +11,7 @@ export default function Sidebar({
 }) {
   const navigate = useNavigate();
   const location = useLocation();
+  const isOfficer = userRole === "officer";
 
   const handleLogout = async () => {
     try {
@@ -105,27 +107,23 @@ export default function Sidebar({
           <div className="mt-auto border-t border-slate-200 pt-5 pb-6">
             <div className="flex flex-col gap-1">
 
-              
+              {/* Profile - officers only */}
+              {isOfficer && (
+                <button
+                  onClick={() => navigate(`/${userRole}/profile`)}
+                  className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-sm"
+                >
+                  <FiUser className="h-[19px] w-[19px] text-slate-400 transition-colors group-hover:text-slate-700" />
+                  <span>Profile</span>
+                </button>
+              )}
 
               {/* Logout */}
               <button
                 onClick={handleLogout}
                 className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
               >
-                <svg
-                  className="h-[19px] w-[19px] text-slate-400 transition-colors group-hover:text-red-500"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.8}
-                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                  />
-                </svg>
-
+                <FiLogOut className="h-[19px] w-[19px] text-slate-400 transition-colors group-hover:text-red-500" />
                 <span>Logout</span>
               </button>
             </div>
@@ -211,50 +209,26 @@ export default function Sidebar({
               <div className="mt-auto border-t border-slate-200 pb-6 pt-5">
                 <div className="flex flex-col gap-1">
 
-                  {/* Profile */}
-                  <button
-                    onClick={() => {
-                      navigate(`/${userRole}/profile`);
-                      onClose();
-                    }}
-                    className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-sm"
-                  >
-                    <svg
-                      className="h-[19px] w-[19px] text-slate-400 group-hover:text-slate-700"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                  {/* Profile - officers only */}
+                  {isOfficer && (
+                    <button
+                      onClick={() => {
+                        navigate(`/${userRole}/profile`);
+                        onClose();
+                      }}
+                      className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-white hover:text-slate-900 hover:shadow-sm"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.8}
-                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                      />
-                    </svg>
-
-                    <span>Profile</span>
-                  </button>
+                      <FiUser className="h-[19px] w-[19px] text-slate-400 group-hover:text-slate-700" />
+                      <span>Profile</span>
+                    </button>
+                  )}
 
                   {/* Logout */}
                   <button
                     onClick={handleLogout}
                     className="group flex w-full cursor-pointer items-center gap-3 rounded-xl px-3.5 py-3 text-sm font-medium text-slate-600 transition-all duration-200 hover:bg-red-50 hover:text-red-600"
                   >
-                    <svg
-                      className="h-[19px] w-[19px] text-slate-400 group-hover:text-red-500"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.8}
-                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                      />
-                    </svg>
-
+                    <FiLogOut className="h-[19px] w-[19px] text-slate-400 group-hover:text-red-500" />
                     <span>Logout</span>
                   </button>
                 </div>

@@ -49,6 +49,8 @@ const LogInFields = ({ loginForm, updateLogin }) => {
 
         if (userRole === "officer") {
           navigate("/officer/dashboard");
+        } else if (userRole === "admin") {
+          navigate("/admin/overview");
         } else {
           navigate("/");
         }
