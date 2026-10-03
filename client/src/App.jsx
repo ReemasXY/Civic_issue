@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import axios from "axios";
 import Home from "./pages/Home/Home";
 import HowItWorks from "./pages/HowItWorks/HowItWorks";
 import { createBrowserRouter } from "react-router";
@@ -17,8 +19,30 @@ import Reviews from "./pages/Citizen/Reviews";
 import OfficerProfile from "./pages/Officer/OfficerProfile";
 import AdminLayout from "./pages/Admin/AdminLayout";
 import AdminDashboard from "./pages/Admin/AdminDashboard";
+import AdminOfficers from "./pages/Admin/AdminOfficers";
 
 function App() {
+  // Setup axios interceptors to handle authentication errors globally
+  useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response) {
+          const { status } = error.response;
+
+          // Redirect to login on 401 (unauthorized) or 403 (forbidden - deactivated account)
+          if ((status === 401 || status === 403) && !window.location.pathname.includes("/login")) {
+            console.log("Authentication failed, redirecting to login...");
+            window.location.href = "/login";
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
   const router = createBrowserRouter([
     {
       path: "/",
@@ -58,7 +82,7 @@ function App() {
           path: "notifications",
           element: <Notifications />,
         },
-         {
+        {
           path: "reviews",
           element: <Reviews />,
         },
@@ -80,19 +104,23 @@ function App() {
           path: "verified-complaints",
           element: <VerifiedComplaints />,
         },
-          {
+        {
           path: "profile",
           element: <OfficerProfile />,
-        }
+        },
       ],
     },
-        {
+    {
       path: "/admin",
       element: <AdminLayout />,
       children: [
         {
           path: "overview",
           element: <AdminDashboard />,
+        },
+        {
+          path: "officers",
+          element: <AdminOfficers />,
         },
       ],
     },

@@ -1,5 +1,12 @@
 import { body } from "express-validator";
 
+// Must match the values createReport assigns to reports.assigned_department
+export const OFFICER_DEPARTMENTS = [
+  "Public Works Department",
+  "Water Supply Department",
+  "Environment Management Department",
+];
+
 // Validation checks for registering the user
 export const registerValidator = [
   body("email")
@@ -54,4 +61,44 @@ export const loginValidator = [
   body("password")
     .notEmpty()
     .withMessage("Password is required"),
+];
+
+
+// Validation checks for an admin creating an officer account
+export const createOfficerValidator = [
+  body("email")
+    .trim()
+    .notEmpty()
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Please enter a valid email")
+    .isLength({ max: 255 })
+    .withMessage("Email must be at most 255 characters"),
+
+  body("username")
+    .trim()
+    .notEmpty()
+    .withMessage("Username is required")
+    .isLength({ min: 8, max: 50 })
+    .withMessage("Username must be between 8 and 50 characters"),
+
+  body("phone_number")
+    .trim()
+    .notEmpty()
+    .withMessage("Phone number is required")
+    .matches(/^(?:\+977[- ]?)?(?:98|97)\d{8}$/)
+    .withMessage("Please enter a valid Nepal phone number"),
+
+  body("department")
+    .trim()
+    .notEmpty()
+    .withMessage("Department is required")
+    .isIn(OFFICER_DEPARTMENTS)
+    .withMessage("Please choose a valid department"),
+
+  body("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isLength({ min: 8 })
+    .withMessage("Password must be at least 8 characters long"),
 ];

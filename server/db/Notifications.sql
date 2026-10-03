@@ -25,7 +25,8 @@ CREATE TABLE notifications (
             'report_verified',
             'report_in_progress',
             'report_resolved',
-            'report_rejected'
+            'report_rejected',
+            'officer_deactivated'
         )),
 
     title VARCHAR(150) NOT NULL,

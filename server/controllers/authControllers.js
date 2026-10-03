@@ -48,14 +48,15 @@ const phoneExists = async (phone_number) => {
 /**
  * Helper: find a user by email across all three role tables.
  * Used by login. Returns the matching row (with its role) or null.
+ * For officers, also returns is_active status.
  */
 const findUserByEmail = async (email) => {
   const result = await pool.query(
-    `SELECT user_id, email, username, phone_number, password_hash, role FROM citizens WHERE email = $1
+    `SELECT user_id, email, username, phone_number, password_hash, role, true AS is_active FROM citizens WHERE email = $1
      UNION ALL
-     SELECT user_id, email, username, phone_number, password_hash, role FROM officers WHERE email = $1
+     SELECT user_id, email, username, phone_number, password_hash, role, COALESCE(is_active, true) AS is_active FROM officers WHERE email = $1
      UNION ALL
-     SELECT user_id, email, username, phone_number, password_hash, role FROM admins WHERE email = $1`,
+     SELECT user_id, email, username, phone_number, password_hash, role, true AS is_active FROM admins WHERE email = $1`,
     [email]
   );
   return result.rows[0] || null;
@@ -195,6 +196,13 @@ const loginUser = async (req, res) => {
     if (!isPasswordValid) {
       return res.status(401).json({
         error: ["Invalid email or password"],
+      });
+    }
+
+    // Check if officer account is deactivated
+    if (user.role === 'officer' && !user.is_active) {
+      return res.status(403).json({
+        error: ["Your account has been deactivated. Please contact your administrator."],
       });
     }
 
