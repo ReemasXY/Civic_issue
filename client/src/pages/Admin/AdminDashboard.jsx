@@ -278,11 +278,11 @@ export default function AdminDashboard() {
       <div className="mx-auto max-w-6xl">
 
         {/* Header */}
-        <h1 className="text-2xl font-bold text-slate-900">
+        <h1 className="mb-1 text-2xl font-bold text-slate-900 sm:text-3xl">
           Overview
         </h1>
 
-        <p className="mt-1 text-slate-500">
+        <p className="text-sm text-slate-500">
           City-wide status of all complaints and officers.
         </p>
 

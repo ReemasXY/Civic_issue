@@ -1,6 +1,8 @@
 import express from "express";
 import {
   getAdminOverview,
+  getAdminComplaints,
+  getAdminDepartments,
   getAdminOfficers,
   createOfficer,
   deactivateOfficer,
@@ -13,6 +15,8 @@ import validateResults from "../middleware/validationResults.js";
 const router = express.Router();
 
 router.get("/overview", checkToken, getAdminOverview);
+router.get("/complaints", checkToken, getAdminComplaints);
+router.get("/departments", checkToken, getAdminDepartments);
 router.get("/officers", checkToken, getAdminOfficers);
 router.post(
   "/officers",

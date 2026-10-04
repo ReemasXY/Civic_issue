@@ -565,11 +565,11 @@ export default function AdminOfficers() {
         {/* Page Header */}
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className="mb-1 text-2xl font-bold text-slate-900 sm:text-3xl">
               Officers
             </h1>
 
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="text-sm text-slate-500">
               Workload and performance of every officer.
             </p>
           </div>

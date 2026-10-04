@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { Outlet } from "react-router";
 import { FiGrid, FiFileText, FiUsers, FiHome as FiBuilding } from "react-icons/fi";
 import Sidebar from "../../components/Sidebar";
-
+import axios from "axios";
 // Same shell as CitizenLayout / OfficerLayout: shared <Sidebar />,
 // same mobile header, same page background.
 export default function AdminLayout() {
@@ -14,6 +14,27 @@ export default function AdminLayout() {
     { path: "/admin/officers", icon: FiUsers, label: "Officers" },
     { path: "/admin/departments", icon: FiBuilding, label: "Departments" },
   ];
+
+    useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response) {
+          const { status } = error.response;
+
+          // Redirect to login on 401 (unauthorized) or 403 (forbidden - deactivated account)
+          if ((status === 401 || status === 403) && !window.location.pathname.includes("/login")) {
+            console.log("Authentication failed, redirecting to login...");
+            window.location.href = "/login";
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
 
   return (
     <div className="flex min-h-screen bg-[#F7F9FB]">

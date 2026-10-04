@@ -104,6 +104,26 @@ export default function CitizenLayout() {
     { path: "/citizen/reviews", icon: FiStar, label: "Reviews" },
   ];
 
+    useEffect(() => {
+    const interceptor = axios.interceptors.response.use(
+      (response) => response,
+      (error) => {
+        if (error.response) {
+          const { status } = error.response;
+
+          // Redirect to login on 401 (unauthorized) or 403 (forbidden - deactivated account)
+          if ((status === 401 || status === 403) && !window.location.pathname.includes("/login")) {
+            console.log("Authentication failed, redirecting to login...");
+            window.location.href = "/login";
+          }
+        }
+        return Promise.reject(error);
+      }
+    );
+
+    // Cleanup interceptor on unmount
+    return () => axios.interceptors.response.eject(interceptor);
+  }, []);
   return (
     <div className="flex min-h-screen bg-[#F7F9FB]">
       {/* Sidebar - Responsive */}

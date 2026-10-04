@@ -12,6 +12,8 @@ const ensureAdmin = (req, res) => {
   }
   return true;
 };
+const COMPLAINT_STATUSES = ["pending", "verified", "in-progress", "resolved", "rejected"];
+const COMPLAINT_SEVERITIES = ["Low", "Medium", "High", "Critical"];
 
 /**
  * GET /api/admin/overview
@@ -479,6 +481,228 @@ export const activateOfficer = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "An error occurred while activating the officer.",
+    });
+  }
+};
+
+
+
+/**
+ * GET /api/admin/complaints
+ * Every complaint in the city, newest first.
+ * Query params: page, limit, search, status, department, severity
+ */
+export const getAdminComplaints = async (req, res) => {
+  try {
+    if (!ensureAdmin(req, res)) return;
+
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
+    const offset = (page - 1) * limit;
+
+    const { search, status, department, severity } = req.query;
+
+    const conditions = [];
+    const params = [];
+
+    if (search && search.trim()) {
+      // Escape LIKE wildcards so "50%" or "_" are searched literally
+      const term = `%${search.trim().replace(/[\\%_]/g, "\\$&")}%`;
+      params.push(term);
+      const i = params.length;
+      conditions.push(
+        `(r.title ILIKE $${i} OR r.category ILIKE $${i}
+          OR r.location_short_label ILIKE $${i}
+          OR r.location_full_label ILIKE $${i})`
+      );
+    }
+
+    if (status && COMPLAINT_STATUSES.includes(status)) {
+      params.push(status);
+      conditions.push(`r.status = $${params.length}`);
+    }
+
+    if (department) {
+      params.push(department);
+      conditions.push(`r.assigned_department = $${params.length}`);
+    }
+
+    if (severity && COMPLAINT_SEVERITIES.includes(severity)) {
+      params.push(severity);
+      conditions.push(`r.severity_level = $${params.length}`);
+    }
+
+    const where = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM reports r ${where}`,
+      params
+    );
+    const total = countResult.rows[0].total;
+
+    const listParams = [...params, limit, offset];
+    const result = await pool.query(
+      `SELECT
+         r.report_id,
+         r.title,
+         r.description,
+         r.category,
+         r.assigned_department,
+         r.severity_level,
+         r.status,
+         r.image_url,
+         r.location_short_label,
+         r.location_full_label,
+         r.created_at,
+         r.resolved_at,
+         c.username AS citizen_name,
+         o.username AS officer_name,
+         rc.reason  AS rejection_reason
+       FROM reports r
+       LEFT JOIN citizens c ON c.user_id = r.user_id
+       LEFT JOIN officers o ON o.user_id = r.handled_by
+       LEFT JOIN rejected_complaints rc ON rc.report_id = r.report_id
+       ${where}
+       ORDER BY r.created_at DESC
+       LIMIT $${listParams.length - 1} OFFSET $${listParams.length}`,
+      listParams
+    );
+
+    return res.status(200).json({
+      success: true,
+      complaints: result.rows.map((row) => ({
+        id: row.report_id,
+        title: row.title,
+        description: row.description,
+        category: row.category,
+        department: row.assigned_department,
+        severity: row.severity_level,
+        status: row.status,
+        imageUrl: row.image_url,
+        locationShort: row.location_short_label,
+        locationFull: row.location_full_label,
+        createdAt: row.created_at,
+        resolvedAt: row.resolved_at,
+        citizen: row.citizen_name,
+        officer: row.officer_name,
+        rejectionReason: row.rejection_reason,
+      })),
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.max(Math.ceil(total / limit), 1),
+      },
+    });
+  } catch (error) {
+    console.error("❌ Error in getAdminComplaints:", error);
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching complaints.",
+    });
+  }
+};
+
+const DEPARTMENT_NAMES = [
+  "Public Works Department",
+  "Water Supply Department",
+  "Environment Management Department",
+];
+
+/**
+ * GET /api/admin/departments
+ * Per-department comparison: complaints by status and severity,
+ * resolved rate, average days to resolve and active officers.
+ */
+export const getAdminDepartments = async (req, res) => {
+  try {
+    if (!ensureAdmin(req, res)) return;
+
+    const reportResult = await pool.query(
+      `SELECT
+         assigned_department AS department,
+         COUNT(*)::int AS total,
+         COUNT(*) FILTER (WHERE status = 'pending')::int AS pending,
+         COUNT(*) FILTER (WHERE status = 'verified')::int AS verified,
+         COUNT(*) FILTER (WHERE status = 'in-progress')::int AS in_progress,
+         COUNT(*) FILTER (WHERE status = 'resolved')::int AS resolved,
+         COUNT(*) FILTER (WHERE status = 'rejected')::int AS rejected,
+         COUNT(*) FILTER (WHERE severity_level = 'Critical')::int AS critical,
+         COUNT(*) FILTER (WHERE severity_level = 'High')::int AS high,
+         COUNT(*) FILTER (WHERE severity_level = 'Medium')::int AS medium,
+         COUNT(*) FILTER (WHERE severity_level = 'Low')::int AS low,
+         (AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 86400)
+           FILTER (WHERE status = 'resolved' AND resolved_at IS NOT NULL))::float AS avg_days
+       FROM reports
+       WHERE assigned_department = ANY($1)
+       GROUP BY assigned_department`,
+      [DEPARTMENT_NAMES]
+    );
+
+    const officerResult = await pool.query(
+      `SELECT
+         department,
+         COUNT(*) FILTER (WHERE COALESCE(is_active, true))::int AS active_officers
+       FROM officers
+       WHERE department = ANY($1)
+       GROUP BY department`,
+      [DEPARTMENT_NAMES]
+    );
+
+    const reportsByDept = new Map(reportResult.rows.map((r) => [r.department, r]));
+    const officersByDept = new Map(
+      officerResult.rows.map((r) => [r.department, r.active_officers])
+    );
+
+    const departments = DEPARTMENT_NAMES.map((name) => {
+      const r = reportsByDept.get(name);
+      const total = r?.total || 0;
+      const resolved = r?.resolved || 0;
+
+      return {
+        name,
+        total,
+        byStatus: {
+          pending: r?.pending || 0,
+          verified: r?.verified || 0,
+          inProgress: r?.in_progress || 0,
+          resolved,
+          rejected: r?.rejected || 0,
+        },
+        bySeverity: {
+          critical: r?.critical || 0,
+          high: r?.high || 0,
+          medium: r?.medium || 0,
+          low: r?.low || 0,
+        },
+        resolvedRate: total ? Math.round((resolved / total) * 100) : 0,
+        avgDays: r?.avg_days != null ? Number(r.avg_days.toFixed(1)) : null,
+        activeOfficers: officersByDept.get(name) || 0,
+      };
+    });
+
+    const totalComplaints = departments.reduce((sum, d) => sum + d.total, 0);
+    const totalResolved = departments.reduce(
+      (sum, d) => sum + d.byStatus.resolved,
+      0
+    );
+
+    return res.status(200).json({
+      success: true,
+      summary: {
+        totalComplaints,
+        resolvedRate: totalComplaints
+          ? Math.round((totalResolved / totalComplaints) * 100)
+          : 0,
+        activeOfficers: departments.reduce((sum, d) => sum + d.activeOfficers, 0),
+      },
+      departments,
+    });
+  } catch (error) {
+    console.error("❌ Error in getAdminDepartments:", error);
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching departments.",
     });
   }
 };
