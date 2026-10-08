@@ -72,7 +72,7 @@ export default function OfficerDashboard() {
   const fetchDashboardData = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/officer/dashboard",
+        "/api/officer/dashboard",
         {
           withCredentials: true,
         }
@@ -155,7 +155,7 @@ export default function OfficerDashboard() {
           status: report.status,
           statusLabel: getStatusLabel(report.status),
           date: formatDate(report.created_at),
-          imageUrl: `http://localhost:5000${report.image_url}`,
+          imageUrl: `${report.image_url}`,
         }));
 
         setRecentComplaints(formattedReports);
@@ -252,7 +252,7 @@ export default function OfficerDashboard() {
       status: updatedReport.status,
       statusLabel: getStatusLabel(updatedReport.status),
       date: formatDate(updatedReport.created_at),
-      imageUrl: `http://localhost:5000${updatedReport.image_url}`,
+      imageUrl: `${updatedReport.image_url}`,
     };
 
     setRecentComplaints(prevComplaints =>
@@ -293,15 +293,15 @@ export default function OfficerDashboard() {
 
   return (
     <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8 lg:px-10">
-      <DashboardHeader username={username} showNotifications={false}/>
+      <DashboardHeader username={username} showNotifications={false} userRole="officer" />
 
-      <div className="mb-8 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid min-w-0 grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <StatsCard key={index} stat={stat} />
         ))}
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
         <RecentComplaintsList
           complaints={recentComplaints}
           allComplaints={allComplaints}

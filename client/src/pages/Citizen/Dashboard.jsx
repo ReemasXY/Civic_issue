@@ -12,7 +12,7 @@ import ComplaintDetail from "./MyComplaints/ComplaintDetail";
 import DashboardHeader from "../../components/Dashboard/DashboardHeader";
 import StatsCard from "../../components/Dashboard/StatsCard";
 import RecentComplaintsList from "../../components/Dashboard/RecentComplaintsList";
-import ComplaintCompletionChart from "../../components/Dashboard/ComplaintCompletionChart";
+import RecentNotifications from "../../components/Dashboard/RecentNotifications";
 
 export default function Dashboard() {
   const username = localStorage.getItem("username") || "User";
@@ -45,26 +45,6 @@ export default function Dashboard() {
     },
   ]);
 
-  const [completionData, setCompletionData] = useState([
-    {
-      name: "Resolved",
-      value: 0,
-    },
-    {
-      name: "In Progress",
-      value: 0,
-    },
-    {
-      name: "Pending",
-      value: 0,
-    },
-    {
-      name: "Verified",
-      value: 0,
-    },
-  ]);
-
-  const [totalComplaints, setTotalComplaints] = useState(0);
   const [recentComplaints, setRecentComplaints] = useState([]);
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
@@ -95,7 +75,7 @@ export default function Dashboard() {
     const fetchDashboardData = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/reports/dashboard",
+          "/api/reports/dashboard",
           {
             withCredentials: true,
           }
@@ -108,10 +88,6 @@ export default function Dashboard() {
           const verified = Number(apiStats.verified) || 0;
           const inProgress = Number(apiStats.inProgress) || 0;
           const resolved = Number(apiStats.resolved) || 0;
-
-          const total = pending + verified + inProgress + resolved;
-
-          setTotalComplaints(total);
 
           setStats([
             {
@@ -140,25 +116,6 @@ export default function Dashboard() {
             },
           ]);
 
-          setCompletionData([
-            {
-              name: "Resolved",
-              value: resolved,
-            },
-            {
-              name: "In Progress",
-              value: inProgress,
-            },
-            {
-              name: "Pending",
-              value: pending,
-            },
-            {
-              name: "Verified",
-              value: verified,
-            },
-          ]);
-
           setAllComplaints(recentReports);
 
           const formattedReports = recentReports.map((report) => ({
@@ -171,7 +128,7 @@ export default function Dashboard() {
             status: report.status,
             statusLabel: getStatusLabel(report.status),
             date: formatDate(report.created_at),
-            imageUrl: `http://localhost:5000${report.image_url}`,
+            imageUrl: `${report.image_url}`,
           }));
 
           setRecentComplaints(formattedReports);
@@ -220,6 +177,11 @@ export default function Dashboard() {
     setShowDetail(true);
   };
 
+  const handleViewComplaintFromNotification = (complaint) => {
+    setSelectedComplaint(complaint);
+    setShowDetail(true);
+  };
+
   if (showDetail && selectedComplaint) {
     return (
       <ComplaintDetail
@@ -231,17 +193,15 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen w-full min-w-0 overflow-x-hidden bg-white p-4 sm:p-6 lg:p-8 lg:px-10">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <DashboardHeader username={username} />
-      </div>
+      <DashboardHeader username={username} showNotifications={true} userRole="citizen" />
 
-      <div className="mb-8 grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="mb-8 grid min-w-0 grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((stat, index) => (
           <StatsCard key={index} stat={stat} />
         ))}
       </div>
 
-      <div className="grid min-w-0 grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
+      <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)]">
         <RecentComplaintsList
           complaints={recentComplaints}
           allComplaints={allComplaints}
@@ -249,11 +209,7 @@ export default function Dashboard() {
           onViewDetails={handleViewDetails}
         />
 
-        <ComplaintCompletionChart
-          completionData={completionData}
-          totalComplaints={totalComplaints}
-          chartColors={chartColors}
-        />
+        <RecentNotifications onViewComplaint={handleViewComplaintFromNotification} />
       </div>
     </div>
   );

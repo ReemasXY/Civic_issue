@@ -100,7 +100,7 @@ export default function Notifications() {
   const fetchNotifications = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/notifications",
+        "/api/notifications",
         { withCredentials: true }
       );
 
@@ -122,7 +122,9 @@ export default function Notifications() {
   // report statuses, the backend pushes the new notification over this
   // socket — no manual refresh needed to see it appear.
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:5000");
+    const ws = new WebSocket(
+      `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/socket`
+    );
     wsRef.current = ws;
 
     ws.onmessage = (event) => {
@@ -172,7 +174,7 @@ export default function Notifications() {
 
     try {
       await axios.patch(
-        `http://localhost:5000/api/notifications/${id}/read`,
+        `/api/notifications/${id}/read`,
         {},
         { withCredentials: true }
       );
@@ -189,7 +191,7 @@ export default function Notifications() {
   const fetchReportDetails = async (reportId) => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/reports/user",
+        "/api/reports/user",
         { withCredentials: true }
       );
 
@@ -225,7 +227,7 @@ export default function Notifications() {
 
     try {
       await axios.patch(
-        "http://localhost:5000/api/notifications/read-all",
+        "/api/notifications/read-all",
         {},
         { withCredentials: true }
       );

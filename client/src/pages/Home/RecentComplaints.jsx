@@ -11,7 +11,7 @@ const RecentComplaints = () => {
     const fetchRecentComplaints = async () => {
       try {
         setLoading(true);
-        const response = await axios.get("http://localhost:5000/api/reports/recent");
+        const response = await axios.get("/api/reports/recent");
 
         if (response.data.success) {
           setComplaints(response.data.complaints);
@@ -113,7 +113,7 @@ const RecentComplaints = () => {
                 <div className="relative h-48 overflow-hidden">
 
                   <img
-                    src={`http://localhost:5000${complaint.image_url}`}
+                    src={`${complaint.image_url}`}
                     alt={complaint.title}
                     className="h-full w-full object-cover transition duration-300 hover:scale-105"
                   />

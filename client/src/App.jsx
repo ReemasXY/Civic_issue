@@ -24,100 +24,100 @@ import AdminComplaints from "./pages/Admin/AdminComplaints";
 import AdminDepartments from "./pages/Admin/AdminDepartments";
 
 function App() {
-  // Setup axios interceptors to handle authentication errors globally
+// Setup axios interceptors to handle authentication errors globally
 
-  const router = createBrowserRouter([
+const router = createBrowserRouter([
+{
+  path: "/",
+  element: <Layout />,
+  children: [
     {
-      path: "/",
-      element: <Layout />,
-      children: [
-        {
-          index: true,
-          element: <Home />,
-        },
-        {
-          path: "howitworks",
-          element: <HowItWorks />,
-        },
-      ],
+      index: true,
+      element: <Home />,
     },
     {
-      path: "/login",
-      element: <Login />,
+      path: "howitworks",
+      element: <HowItWorks />,
+    },
+  ],
+},
+{
+  path: "/login",
+  element: <Login />,
+},
+{
+  path: "/citizen",
+  element: <CitizenLayout />,
+  children: [
+    {
+      path: "dashboard",
+      element: <Dashboard />,
     },
     {
-      path: "/citizen",
-      element: <CitizenLayout />,
-      children: [
-        {
-          path: "dashboard",
-          element: <Dashboard />,
-        },
-        {
-          path: "report",
-          element: <ReportIssue />,
-        },
-        {
-          path: "my-complaints",
-          element: <MyComplaints />,
-        },
-        {
-          path: "notifications",
-          element: <Notifications />,
-        },
-        {
-          path: "reviews",
-          element: <Reviews />,
-        },
-      ],
+      path: "report",
+      element: <ReportIssue />,
     },
     {
-      path: "/officer",
-      element: <OfficerLayout />,
-      children: [
-        {
-          path: "dashboard",
-          element: <OfficerDashboard />,
-        },
-        {
-          path: "complaints",
-          element: <AssignedComplaints />,
-        },
-        {
-          path: "verified-complaints",
-          element: <VerifiedComplaints />,
-        },
-        {
-          path: "profile",
-          element: <OfficerProfile />,
-        },
-      ],
+      path: "my-complaints",
+      element: <MyComplaints />,
     },
     {
-      path: "/admin",
-      element: <AdminLayout />,
-      children: [
-        {
-          path: "overview",
-          element: <AdminDashboard />,
-        },
-        {
-          path: "complaints",
-          element: <AdminComplaints />,
-        },
-        {
-          path: "officers",
-          element: <AdminOfficers />,
-        },
-        {
-          path: "departments",
-          element: <AdminDepartments />,
-        },
-      ],
+      path: "notifications",
+      element: <Notifications />,
     },
-  ]);
+    {
+      path: "reviews",
+      element: <Reviews />,
+    },
+  ],
+},
+{
+  path: "/officer",
+  element: <OfficerLayout />,
+  children: [
+    {
+      path: "dashboard",
+      element: <OfficerDashboard />,
+    },
+    {
+      path: "complaints",
+      element: <AssignedComplaints />,
+    },
+    {
+      path: "verified-complaints",
+      element: <VerifiedComplaints />,
+    },
+    {
+      path: "profile",
+      element: <OfficerProfile />,
+    },
+  ],
+},
+{
+  path: "/admin",
+  element: <AdminLayout />,
+  children: [
+    {
+      path: "overview",
+      element: <AdminDashboard />,
+    },
+    {
+      path: "complaints",
+      element: <AdminComplaints />,
+    },
+    {
+      path: "officers",
+      element: <AdminOfficers />,
+    },
+    {
+      path: "departments",
+      element: <AdminDepartments />,
+    },
+  ],
+},
+]);
 
-  return <RouterProvider router={router} />;
+return <RouterProvider router={router} />;
 }
 
 export default App;

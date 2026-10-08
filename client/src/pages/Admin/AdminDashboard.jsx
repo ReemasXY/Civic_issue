@@ -186,7 +186,7 @@ export default function AdminDashboard() {
     const fetchOverview = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/admin/overview",
+          "/api/admin/overview",
           {
             withCredentials: true,
           }

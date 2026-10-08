@@ -19,7 +19,7 @@ export default function ComplaintHeader({ complaint, onBack, statusConfig }) {
           {/* Complaint Image */}
           <div className="w-full flex-shrink-0 md:w-[220px]">
             <img
-              src={`http://localhost:5000${complaint.image_url}`}
+              src={`${complaint.image_url}`}
               alt={complaint.title}
               className="h-[150px] w-full rounded-lg object-cover shadow-sm md:h-[130px]"
             />

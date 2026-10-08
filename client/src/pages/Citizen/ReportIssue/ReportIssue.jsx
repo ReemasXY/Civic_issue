@@ -205,7 +205,7 @@ export default function ReportIssue({
 
       const response =
         await axios.post(
-          "http://localhost:5000/api/reports/verify-image",
+          "/api/reports/verify-image",
           formData
         );
 
@@ -649,7 +649,7 @@ export default function ReportIssue({
 
         // Submit to backend
         const response = await axios.post(
-          "http://localhost:5000/api/reports/create-report",
+          "/api/reports/create-report",
           formData,
           {
             withCredentials: true,
@@ -721,11 +721,11 @@ export default function ReportIssue({
 
           <div className="mb-7">
 
-            <h1 className="text-xl md:text-2xl font-bold text-slate-800">
+            <h1 className="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
               Report a New Issue
             </h1>
 
-            <p className="text-sm text-slate-500 mt-1">
+            <p className="mt-2 text-sm leading-6 text-slate-500">
               Provide the details below to submit a civic issue report.
             </p>
 

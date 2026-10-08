@@ -31,7 +31,7 @@ export default function Navbar() {
     const checkAuth = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/auth/getuser",
+          "/api/auth/getuser",
           {
             withCredentials: true,
             headers: {
@@ -59,7 +59,7 @@ export default function Navbar() {
   const handleLogout = async () => {
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/auth/logout",
+        "/api/auth/logout",
         {},
         {
           withCredentials: true,

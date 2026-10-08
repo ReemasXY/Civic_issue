@@ -83,7 +83,7 @@ export default function ComplaintCard({ complaint, onViewDetails }) {
       <div className="flex gap-4 p-5">
         {/* Image */}
         <img
-          src={`http://localhost:5000${complaint.image_url}`}
+          src={`${complaint.image_url}`}
           alt={complaint.title}
           className="h-32 w-32 flex-shrink-0 rounded-lg object-cover"
         />

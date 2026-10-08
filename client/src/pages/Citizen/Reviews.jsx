@@ -11,7 +11,7 @@ import {
 import successToast from "../../utils/SuccessToast";
 import errToast from "../../utils/ErrorToast";
 
-const API = "http://localhost:5000/api/reviews";
+const API = "/api/reviews";
 
 const RATING_LABELS = ["Poor", "Fair", "Good", "Very good", "Excellent"];
 
@@ -146,15 +146,6 @@ export default function Reviews() {
     }
   };
 
-  const average =
-    past.length > 0
-      ? (
-          past.reduce(
-            (sum, review) => sum + review.rating,
-            0
-          ) / past.length
-        ).toFixed(1)
-      : "–";
 
   if (loading) {
     return (
@@ -171,8 +162,8 @@ export default function Reviews() {
   }
 
   if (selected) {
-    const officerName =
-      selected.officer_name || "Assigned officer";
+    const departmentName =
+      selected.department_name || selected.department || "Department";
 
     return (
       <div className="min-h-screen w-full bg-slate-50 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -187,22 +178,21 @@ export default function Reviews() {
           </button>
 
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            {/* Officer Information */}
+            {/* Department Information */}
             <div className="border-b border-slate-200 px-5 py-5 sm:px-7">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex min-w-0 items-center gap-4">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-sm font-bold text-teal-700">
-                    {getInitials(officerName)}
+                    {getInitials(departmentName)}
                   </div>
 
                   <div className="min-w-0">
                     <p className="text-base font-semibold text-slate-900">
-                      {officerName}
+                      {departmentName}
                     </p>
 
                     <p className="mt-1 text-sm text-slate-500">
-                      {selected.officer_department ||
-                        "Department not recorded"}
+                      Handled by department staff
                     </p>
                   </div>
                 </div>
@@ -256,7 +246,7 @@ export default function Reviews() {
                 </p>
 
                 <p className="mt-1 text-sm text-slate-500">
-                  How would you rate the officer's handling
+                  How would you rate the department's handling
                   of this complaint?
                 </p>
 
@@ -408,10 +398,6 @@ export default function Reviews() {
       <div className="mx-auto max-w-6xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-teal-600">
-            <span className="h-1.5 w-1.5 rounded-full bg-teal-500" />
-            Citizen feedback
-          </div>
 
           <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
             Rate officer work
@@ -424,7 +410,7 @@ export default function Reviews() {
         </div>
 
         {/* Statistics */}
-        <div className="mb-9 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="mb-9 grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-start justify-between">
               <div>
@@ -454,31 +440,6 @@ export default function Reviews() {
               </div>
 
               <FiMessageSquare className="h-5 w-5 text-teal-600" />
-            </div>
-          </div>
-
-          <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-sm font-medium text-slate-500">
-                  Your average
-                </p>
-
-                <div className="mt-2 flex items-center gap-2">
-                  <p className="text-2xl font-bold text-slate-900">
-                    {average}
-                  </p>
-
-                  {average !== "–" && (
-                    <FiStar
-                      className="h-5 w-5 text-amber-400"
-                      fill="currentColor"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <FiCheckCircle className="h-5 w-5 text-emerald-600" />
             </div>
           </div>
         </div>
@@ -520,9 +481,9 @@ export default function Reviews() {
           ) : (
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               {pending.map((complaint, index) => {
-                const officerName =
-                  complaint.officer_name ||
-                  "Assigned officer";
+                const departmentName =
+                  complaint.department_name || complaint.department ||
+                  "Department";
 
                 return (
                   <div
@@ -534,7 +495,7 @@ export default function Reviews() {
                     }`}
                   >
                     <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-sm font-bold text-teal-700">
-                      {getInitials(officerName)}
+                      {getInitials(departmentName)}
                     </div>
 
                     <div className="min-w-0 flex-1">
@@ -543,17 +504,7 @@ export default function Reviews() {
                       </p>
 
                       <p className="mt-1 truncate text-sm text-slate-500">
-                        {officerName}
-
-                        {complaint.officer_department && (
-                          <>
-                            <span className="mx-1.5 text-slate-300">
-                              •
-                            </span>
-
-                            {complaint.officer_department}
-                          </>
-                        )}
+                        {departmentName}
                       </p>
                     </div>
 
@@ -623,8 +574,8 @@ export default function Reviews() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-slate-900 sm:text-base">
-                        {review.officer_name ||
-                          "Assigned officer"}
+                        {review.officer_department ||
+                          "Department"}
                       </p>
 
                       <span className="text-slate-300">

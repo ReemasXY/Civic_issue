@@ -13,7 +13,7 @@ export default function Hero() {
     try {
       // Check if user is authenticated
       const response = await axios.get(
-        "http://localhost:5000/api/auth/getuser",
+        "/api/auth/getuser",
         {
           withCredentials: true,
           headers: {

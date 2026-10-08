@@ -57,7 +57,7 @@ export default function OfficerProfile() {
     const fetchProfile = async () => {
       try {
         const response = await axios.get(
-          "http://localhost:5000/api/officer/profile",
+          "/api/officer/profile",
           {
             withCredentials: true,
           }

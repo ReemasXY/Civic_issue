@@ -20,7 +20,7 @@ export default function ComplaintDetail({ complaint, onBack }) {
         setLoadingRejection(true);
         try {
           const response = await axios.get(
-            `http://localhost:5000/api/reports/${complaint.report_id}/rejection`,
+            `/api/reports/${complaint.report_id}/rejection`,
             { withCredentials: true }
           );
 

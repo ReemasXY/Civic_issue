@@ -98,7 +98,7 @@ export default function ComplaintInformation({ complaint, onMapClick, severityCo
             </div>
 
             <img
-              src={`http://localhost:5000${complaint.image_url}`}
+              src={`${complaint.image_url}`}
               alt={complaint.title}
               className="h-[300px] w-full rounded-lg object-cover"
             />

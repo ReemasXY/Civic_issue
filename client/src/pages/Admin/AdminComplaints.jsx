@@ -190,7 +190,7 @@ function ComplaintModal({ complaint, onClose }) {
         {/* Complaint Image */}
         {complaint.imageUrl && (
           <img
-            src={`http://localhost:5000${complaint.imageUrl}`}
+            src={`${complaint.imageUrl}`}
             alt={complaint.title}
             className="mb-4 h-28 w-full rounded-xl border border-slate-100 object-cover"
             onError={(e) => {
@@ -338,7 +338,7 @@ export default function AdminComplaints() {
         if (severity) params.severity = severity;
 
         const response = await axios.get(
-          "http://localhost:5000/api/admin/complaints",
+          "/api/admin/complaints",
           {
             params,
             withCredentials: true,

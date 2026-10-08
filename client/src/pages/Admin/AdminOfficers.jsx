@@ -236,7 +236,7 @@ function AddOfficerModal({ onClose, onCreated }) {
 
     try {
       const response = await axios.post(
-        "http://localhost:5000/api/admin/officers",
+        "/api/admin/officers",
         {
           username: form.username.trim(),
           email: form.email.trim(),
@@ -448,7 +448,7 @@ export default function AdminOfficers() {
   const fetchOfficers = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/admin/officers",
+        "/api/admin/officers",
         {
           withCredentials: true,
         }
@@ -491,7 +491,7 @@ export default function AdminOfficers() {
   const handleDeactivate = async (officer) => {
     try {
       const response = await axios.patch(
-        `http://localhost:5000/api/admin/officers/${officer.userId}/deactivate`,
+        `/api/admin/officers/${officer.userId}/deactivate`,
         {},
         {
           withCredentials: true,
@@ -511,7 +511,7 @@ export default function AdminOfficers() {
   const handleActivate = async (officer) => {
     try {
       const response = await axios.patch(
-        `http://localhost:5000/api/admin/officers/${officer.userId}/activate`,
+        `/api/admin/officers/${officer.userId}/activate`,
         {},
         {
           withCredentials: true,

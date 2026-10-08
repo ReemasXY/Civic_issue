@@ -631,13 +631,16 @@ export const getAdminDepartments = async (req, res) => {
          COUNT(*) FILTER (WHERE severity_level = 'High')::int AS high,
          COUNT(*) FILTER (WHERE severity_level = 'Medium')::int AS medium,
          COUNT(*) FILTER (WHERE severity_level = 'Low')::int AS low,
-         (AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 86400)
-           FILTER (WHERE status = 'resolved' AND resolved_at IS NOT NULL))::float AS avg_days
+         (AVG(EXTRACT(EPOCH FROM (COALESCE(resolved_at, updated_at) - created_at)) / 86400)
+           FILTER (WHERE status = 'resolved'))::float AS avg_days
        FROM reports
        WHERE assigned_department = ANY($1)
        GROUP BY assigned_department`,
       [DEPARTMENT_NAMES]
     );
+
+    // Temporary: shows what the database returned. Delete once it works.
+    console.log("🔎 departments rows:", reportResult.rows);
 
     const officerResult = await pool.query(
       `SELECT

@@ -71,28 +71,6 @@ function StatCard({ label, value, accent }) {
   );
 }
 
-function BarValueLabel({ x, y, width, index, data, suffix = "" }) {
-  const item = data[index];
-
-  const text =
-    item && item.value !== null && item.value !== undefined
-      ? `${item.value}${suffix}`
-      : "No data";
-
-  return (
-    <text
-      x={x + width / 2}
-      y={y - 7}
-      textAnchor="middle"
-      fontSize={12}
-      fontWeight={500}
-      fill="#0F172A"
-    >
-      {text}
-    </text>
-  );
-}
-
 function ChartCard({ title, subtitle, children }) {
   return (
     <div className={`${CARD_CLASS} p-5`}>
@@ -105,7 +83,9 @@ function ChartCard({ title, subtitle, children }) {
   );
 }
 
-function SmallBarChart({ data, max, suffix }) {
+// Each data item is { name, value, label }.
+// "value" sets the bar height, "label" is the text printed above the bar.
+function SmallBarChart({ data, max }) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <BarChart
@@ -145,7 +125,10 @@ function SmallBarChart({ data, max, suffix }) {
         <Tooltip
           cursor={{ fill: "#F8FAFC" }}
           contentStyle={tooltipStyle}
-          formatter={(value) => [`${value}${suffix}`, ""]}
+          formatter={(value, name, item) => [
+            item?.payload?.label ?? value,
+            "",
+          ]}
         />
 
         <Bar
@@ -155,8 +138,11 @@ function SmallBarChart({ data, max, suffix }) {
           barSize={36}
         >
           <LabelList
-            dataKey="value"
-            content={<BarValueLabel data={data} suffix={suffix} />}
+            dataKey="label"
+            position="top"
+            fill="#0F172A"
+            fontSize={12}
+            fontWeight={500}
           />
         </Bar>
       </BarChart>
@@ -176,12 +162,12 @@ export default function AdminDepartments() {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/api/admin/departments",
-          {
-            withCredentials: true,
-          }
-        );
+        const response = await axios.get("/api/admin/departments", {
+          withCredentials: true,
+        });
+
+        // Temporary: shows exactly what the page receives. Remove once it works.
+        console.log("departments response:", response.data);
 
         if (response.data.success) {
           setData(response.data);
@@ -226,11 +212,18 @@ export default function AdminDepartments() {
   const rateData = departments.map((d) => ({
     name: shortName(d.name),
     value: d.resolvedRate,
+    label: `${d.resolvedRate}%`,
   }));
 
   const daysData = departments.map((d) => ({
     name: shortName(d.name),
-    value: d.avgDays,
+    value: d.avgDays ?? 0,
+    label:
+      d.avgDays == null
+        ? "None resolved"
+        : d.avgDays < 1
+        ? `${Math.round(d.avgDays * 24)} hrs`
+        : `${d.avgDays} days`,
   }));
 
   const maxDays = Math.max(1, ...daysData.map((d) => d.value || 0));
@@ -252,10 +245,7 @@ export default function AdminDepartments() {
 
       {/* Summary */}
       <div className="mb-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Complaints"
-          value={summary.totalComplaints}
-        />
+        <StatCard label="Complaints" value={summary.totalComplaints} />
 
         <StatCard
           label="Resolved"
@@ -263,10 +253,7 @@ export default function AdminDepartments() {
           accent={TEAL}
         />
 
-        <StatCard
-          label="Active officers"
-          value={summary.activeOfficers}
-        />
+        <StatCard label="Active officers" value={summary.activeOfficers} />
       </div>
 
       {/* Complaints by department */}
@@ -278,14 +265,8 @@ export default function AdminDepartments() {
 
           <div className="flex gap-2">
             {[
-              {
-                value: "status",
-                label: "By status",
-              },
-              {
-                value: "severity",
-                label: "By severity",
-              },
+              { value: "status", label: "By status" },
+              { value: "severity", label: "By severity" },
             ].map((option) => (
               <button
                 key={option.value}
@@ -306,15 +287,10 @@ export default function AdminDepartments() {
         {/* Legend */}
         <div className="mb-3 mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs text-slate-500">
           {series.map((item) => (
-            <span
-              key={item.key}
-              className="flex items-center gap-1.5"
-            >
+            <span key={item.key} className="flex items-center gap-1.5">
               <span
                 className="h-2.5 w-2.5 rounded-sm"
-                style={{
-                  background: item.color,
-                }}
+                style={{ background: item.color }}
               />
 
               {item.label}
@@ -334,10 +310,7 @@ export default function AdminDepartments() {
                 bottom: 8,
               }}
             >
-              <CartesianGrid
-                stroke={GRID}
-                horizontal={false}
-              />
+              <CartesianGrid stroke={GRID} horizontal={false} />
 
               <XAxis
                 type="number"
@@ -363,9 +336,7 @@ export default function AdminDepartments() {
               />
 
               <Tooltip
-                cursor={{
-                  fill: "#F8FAFC",
-                }}
+                cursor={{ fill: "#F8FAFC" }}
                 contentStyle={tooltipStyle}
               />
 
@@ -384,9 +355,7 @@ export default function AdminDepartments() {
                     fill="#FFFFFF"
                     fontSize={11}
                     fontWeight={500}
-                    formatter={(value) =>
-                      value > 0 ? value : ""
-                    }
+                    formatter={(value) => (value > 0 ? value : "")}
                   />
                 </Bar>
               ))}
@@ -397,26 +366,15 @@ export default function AdminDepartments() {
 
       {/* Comparison charts */}
       <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-        <ChartCard
-          title="Resolved rate"
-          subtitle="% of complaints resolved"
-        >
-          <SmallBarChart
-            data={rateData}
-            max={100}
-            suffix="%"
-          />
+        <ChartCard title="Resolved rate" subtitle="% of complaints resolved">
+          <SmallBarChart data={rateData} max={100} />
         </ChartCard>
 
         <ChartCard
           title="Time to resolve"
-          subtitle="Average days, lower is better"
+          subtitle="Average time, lower is better"
         >
-          <SmallBarChart
-            data={daysData}
-            max={Math.ceil(maxDays * 1.3)}
-            suffix=""
-          />
+          <SmallBarChart data={daysData} max={Math.ceil(maxDays * 1.3)} />
         </ChartCard>
       </div>
     </div>

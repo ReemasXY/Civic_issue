@@ -25,7 +25,7 @@ export default function AssignedComplaints() {
   const fetchAssignedComplaints = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/officer/complaints",
+        "/api/officer/complaints",
         {
           withCredentials: true,
         }

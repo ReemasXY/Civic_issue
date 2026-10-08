@@ -73,7 +73,8 @@ export const getMyReviews = async (req, res) => {
          rv.comment,
          rv.created_at,
          r.title,
-         o.username AS officer_name
+         o.username AS officer_name,
+         o.department AS officer_department
        FROM reviews rv
        JOIN reports r ON r.report_id = rv.report_id
        LEFT JOIN officers o ON o.user_id = rv.officer_id

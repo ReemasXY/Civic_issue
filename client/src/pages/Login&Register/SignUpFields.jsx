@@ -18,7 +18,7 @@ const SignUpFields = ({ signUpForm, update }) => {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        "http://localhost:5000/api/auth/register",
+        "/api/auth/register",
         {
           username: signUpForm.name,
           email: signUpForm.email,

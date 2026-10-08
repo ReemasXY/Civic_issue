@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Outlet, useLocation } from "react-router";
+import { Outlet, useLocation, useNavigate } from "react-router";
 import {
   FiHome,
   FiPlusCircle,
@@ -9,6 +9,7 @@ import {
   FiBell,
 } from "react-icons/fi";
 import Sidebar from "../../components/Sidebar";
+import ProfileDropdown from "../../components/ProfileDropdown";
 import axios from "axios";
 
 export default function CitizenLayout() {
@@ -16,12 +17,13 @@ export default function CitizenLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
   const wsRef = useRef(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   // Fetch initial unread count
   const fetchUnreadCount = async () => {
     try {
       const response = await axios.get(
-        "http://localhost:5000/api/notifications",
+        "/api/notifications",
         { withCredentials: true }
       );
 
@@ -40,7 +42,9 @@ export default function CitizenLayout() {
 
   // WebSocket connection for real-time updates
   useEffect(() => {
-    const ws = new WebSocket("ws://localhost:5000");
+    const ws = new WebSocket(
+      `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/socket`
+    );
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -146,33 +150,52 @@ export default function CitizenLayout() {
           </span>
         </div>
 
-        <button
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
-        >
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+        <div className="flex items-center gap-2">
+          {/* Notification Bell */}
+          <button
+            onClick={() => navigate("/citizen/notifications")}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full text-slate-600 hover:bg-slate-100"
           >
-            {isMobileMenuOpen ? (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
-              />
-            ) : (
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 6h16M4 12h16M4 18h16"
-              />
+            <FiBell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-semibold text-white">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
             )}
-          </svg>
-        </button>
+          </button>
+
+          {/* Profile Dropdown */}
+          <ProfileDropdown userRole="citizen" isMobile={true} />
+
+          {/* Menu Toggle */}
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+          >
+            <svg
+              className="h-6 w-6"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              {isMobileMenuOpen ? (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              ) : (
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              )}
+            </svg>
+          </button>
+        </div>
       </div>
 
       {/* Main Content */}

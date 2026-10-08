@@ -62,7 +62,7 @@ const OTPVerification = ({ email, purpose = "registration" }) => {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        "http://localhost:5000/api/auth/resend-otp",
+        "/api/auth/resend-otp",
         { email, purpose },
         { withCredentials: true }
       );
@@ -98,7 +98,7 @@ const OTPVerification = ({ email, purpose = "registration" }) => {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        "http://localhost:5000/api/auth/verify-otp",
+        "/api/auth/verify-otp",
         {
           email,
           otp: otpCode,

@@ -19,7 +19,7 @@ const LogInFields = ({ loginForm, updateLogin }) => {
     try {
       setIsLoading(true);
       const response = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        "/api/auth/login",
         {
           email: loginForm.loginEmail,
           password: loginForm.loginPassword,

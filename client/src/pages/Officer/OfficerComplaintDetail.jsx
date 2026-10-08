@@ -37,7 +37,7 @@ export default function OfficerComplaintDetail({ complaint, onBack, onStatusUpda
 
     try {
       const response = await axios.patch(
-        `http://localhost:5000/api/officer/complaints/${complaint.report_id}/status`,
+        `/api/officer/complaints/${complaint.report_id}/status`,
         reason ? { status: newStatus, rejection_reason: reason } : { status: newStatus },
         { withCredentials: true }
       );

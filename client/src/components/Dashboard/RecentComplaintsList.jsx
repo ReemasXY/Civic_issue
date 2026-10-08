@@ -8,38 +8,38 @@ export default function RecentComplaintsList({
   title = "My Complaints"
 }) {
   return (
-    <section className="min-w-0 rounded-2xl border border-teal-50 bg-white p-6 shadow-[0_6px_24px_rgba(15,118,110,0.07)]">
-      <div className="mb-5 flex items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-slate-900">
+    <section className="min-w-0 rounded-2xl border border-teal-50 bg-white p-4 sm:p-6 shadow-[0_6px_24px_rgba(15,118,110,0.07)]">
+      <div className="mb-4 sm:mb-5 flex items-center justify-between gap-3">
+        <h2 className="text-base sm:text-lg font-semibold text-slate-900">
           {title}
         </h2>
 
         <a
           href="#"
-          className="flex-shrink-0 text-sm font-medium text-teal-600 transition-colors hover:text-teal-700"
+          className="flex-shrink-0 text-xs sm:text-sm font-medium text-teal-600 transition-colors hover:text-teal-700"
         >
           View All
         </a>
       </div>
 
-      <div className="space-y-4">
+      <div className="space-y-3 sm:space-y-4">
         {complaints.map((complaint) => (
           <div
             key={complaint.id}
-            className="flex min-w-0 gap-5 rounded-xl border border-teal-50 bg-white p-5 shadow-[0_4px_16px_rgba(15,118,110,0.06)] transition-all duration-200 hover:border-teal-100 hover:shadow-[0_8px_22px_rgba(15,118,110,0.11)]"
+            className="flex min-w-0 flex-col sm:flex-row gap-3 sm:gap-5 rounded-xl border border-teal-50 bg-white p-3 sm:p-5 shadow-[0_4px_16px_rgba(15,118,110,0.06)] transition-all duration-200 hover:border-teal-100 hover:shadow-[0_8px_22px_rgba(15,118,110,0.11)]"
           >
             <img
               src={complaint.imageUrl}
               alt={complaint.title}
-              className="h-32 w-32 flex-shrink-0 rounded-lg object-cover"
+              className="h-40 w-full sm:h-32 sm:w-32 flex-shrink-0 rounded-lg object-cover"
             />
 
-            <div className="flex min-w-0 flex-1 flex-col justify-center gap-3">
-              <h3 className="truncate font-semibold text-slate-900">
+            <div className="flex min-w-0 flex-1 flex-col justify-center gap-2 sm:gap-3">
+              <h3 className="truncate text-sm sm:text-base font-semibold text-slate-900">
                 {complaint.title}
               </h3>
 
-              <div className="flex min-w-0 items-center gap-1.5 text-sm text-slate-500">
+              <div className="flex min-w-0 items-center gap-1.5 text-xs sm:text-sm text-slate-500">
                 <FiMapPin className="h-3.5 w-3.5 flex-shrink-0 text-teal-600" />
                 <span className="truncate">{complaint.location}</span>
               </div>
@@ -59,7 +59,7 @@ export default function RecentComplaintsList({
               </div>
             </div>
 
-            <div className="flex flex-shrink-0 items-center">
+            <div className="flex sm:flex-shrink-0 items-center">
               <button
                 onClick={() => {
                   const fullComplaint = allComplaints.find(
@@ -69,7 +69,7 @@ export default function RecentComplaintsList({
                     onViewDetails(fullComplaint);
                   }
                 }}
-                className="cursor-pointer whitespace-nowrap rounded-lg border border-teal-100 bg-white px-5 py-2.5 text-sm font-medium text-slate-900 shadow-[0_3px_10px_rgba(15,118,110,0.06)] transition-all duration-200 hover:border-teal-600 hover:bg-teal-600 hover:text-white hover:shadow-[0_6px_16px_rgba(15,118,110,0.18)]"
+                className="w-full sm:w-auto cursor-pointer whitespace-nowrap rounded-lg border border-teal-100 bg-white px-4 sm:px-5 py-2 sm:py-2.5 text-xs sm:text-sm font-medium text-slate-900 shadow-[0_3px_10px_rgba(15,118,110,0.06)] transition-all duration-200 hover:border-teal-600 hover:bg-teal-600 hover:text-white hover:shadow-[0_6px_16px_rgba(15,118,110,0.18)]"
               >
                 View Details
               </button>
