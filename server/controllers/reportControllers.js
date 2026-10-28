@@ -181,6 +181,77 @@ export const getRecentComplaints = async (req, res) => {
   }
 };
 
+/**
+ * Get one complaint that belongs to the logged-in user
+ * GET /api/reports/:reportId
+ * Used when a citizen opens a complaint from a notification.
+ */
+export const getComplaintById = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+    const { reportId } = req.params;
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated. Please log in.",
+      });
+    }
+
+    // Scoped to user_id so a citizen can only open their own complaints.
+    const reportQuery = `
+      SELECT
+        report_id,
+        title,
+        description,
+        category,
+        location_short_label,
+        location_full_label,
+        latitude,
+        longitude,
+        image_url,
+        status,
+        severity_level,
+        severity_score,
+        created_at,
+        updated_at,
+        resolved_at
+      FROM reports
+      WHERE report_id = $1 AND user_id = $2
+    `;
+
+    const reportResult = await pool.query(reportQuery, [reportId, user_id]);
+
+    if (reportResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Report not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      report: reportResult.rows[0],
+    });
+  } catch (error) {
+    // 22P02 = the id in the URL is not a valid UUID
+    if (error.code === "22P02") {
+      return res.status(404).json({
+        success: false,
+        error: "Report not found.",
+      });
+    }
+
+    console.error("❌ Error in getComplaintById:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while fetching the complaint.",
+      details: error.message,
+    });
+  }
+};
+
 export const createReport = async (req, res) => {
   try {
     console.log("========================================");
@@ -251,7 +322,9 @@ export const createReport = async (req, res) => {
     const categoryLower = category.trim().toLowerCase();
     let assignedDepartment = null;
 
-    if (categoryLower === "pothole" || categoryLower === "road damage") {
+    if (categoryLower === "road damage") {
+      assignedDepartment = "Road Department";
+    } else if (categoryLower === "streetlight damage") {
       assignedDepartment = "Public Works Department";
     } else if (categoryLower === "drainage") {
       assignedDepartment = "Water Supply Department";

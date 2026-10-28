@@ -17,6 +17,7 @@ const PAGE_SIZE = 10;
 
 // Must match the values the server assigns to reports.assigned_department
 const DEPARTMENTS = [
+  "Road Department",
   "Public Works Department",
   "Water Supply Department",
   "Environment Management Department",

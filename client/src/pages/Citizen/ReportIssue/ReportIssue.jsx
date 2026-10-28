@@ -22,11 +22,10 @@ import SubmittingModal from "./SubmittingModal";
 import SuccessModal from "./SuccessModal";
 
 const CATEGORY_OPTIONS = [
-  "Pothole",
-  "Garbage / Waste",
-  "Water Supply",
-  "Drainage",
   "Road Damage",
+  "Garbage / Waste",
+  "Streetlight Damage",
+  "Drainage",
 ];
 
 export default function ReportIssue({
@@ -35,7 +34,7 @@ export default function ReportIssue({
 }) {
   const [title, setTitle] = useState("");
   const [category, setCategory] =
-    useState("Pothole");
+    useState("Road Damage");
 
   const [description, setDescription] =
     useState("");
@@ -664,7 +663,7 @@ export default function ReportIssue({
         // Reset form
         setTitle("");
         setDescription("");
-        setCategory("Pothole");
+        setCategory("Road Damage");
         setSelectedLocation(null);
         setImageFile(null);
         setImagePreview(null);

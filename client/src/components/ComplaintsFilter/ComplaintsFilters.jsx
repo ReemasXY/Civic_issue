@@ -21,11 +21,10 @@ export default function ComplaintsFilters({
 
   const categoryOptions = [
     { value: "all", label: "All Categories" },
-    { value: "Pothole", label: "Pothole" },
-    { value: "Garbage / Waste", label: "Garbage / Waste" },
-    { value: "Water Supply", label: "Water Supply" },
-    { value: "Drainage", label: "Drainage" },
     { value: "Road Damage", label: "Road Damage" },
+    { value: "Garbage / Waste", label: "Garbage / Waste" },
+    { value: "Streetlight Damage", label: "Streetlight Damage" },
+    { value: "Drainage", label: "Drainage" },
   ];
 
   const severityOptions = [

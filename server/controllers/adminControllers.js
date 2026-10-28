@@ -604,6 +604,7 @@ export const getAdminComplaints = async (req, res) => {
 };
 
 const DEPARTMENT_NAMES = [
+  "Road Department",
   "Public Works Department",
   "Water Supply Department",
   "Environment Management Department",

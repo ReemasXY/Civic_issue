@@ -36,7 +36,8 @@ export const getPendingReviews = async (req, res) => {
          r.location_short_label,
          r.updated_at AS resolved_at,
          o.username   AS officer_name,
-         o.department AS officer_department
+         o.department AS officer_department,
+         COALESCE(NULLIF(r.assigned_department, 'none'), o.department) AS department_name
        FROM reports r
        LEFT JOIN officers o ON o.user_id = r.handled_by
        LEFT JOIN reviews rv ON rv.report_id = r.report_id

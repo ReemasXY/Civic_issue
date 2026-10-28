@@ -1,52 +1,4 @@
 const QUESTIONS = {
-  Pothole: [
-    {
-      question: "How large is the pothole?",
-      options: [
-        { label: "Small", score: 1 },
-        { label: "Medium", score: 2 },
-        { label: "Large", score: 3 },
-        { label: "Very Large", score: 4 },
-      ],
-    },
-    {
-      question: "Does it affect traffic?",
-      options: [
-        { label: "No", score: 0 },
-        { label: "Slightly", score: 1 },
-        { label: "Moderately", score: 2 },
-        { label: "Severely", score: 4 },
-      ],
-    },
-    {
-      question: "Does it pose a safety risk?",
-      options: [
-        { label: "No", score: 0 },
-        { label: "Low Risk", score: 1 },
-        { label: "Medium Risk", score: 2 },
-        { label: "High Risk", score: 4 },
-      ],
-    },
-    {
-      question: "How long has the pothole existed?",
-      options: [
-        { label: "Less than a week", score: 1 },
-        { label: "1–4 weeks", score: 2 },
-        { label: "1–3 months", score: 3 },
-        { label: "More than 3 months", score: 4 },
-      ],
-    },
-    {
-      question: "Is it getting worse?",
-      options: [
-        { label: "No", score: 0 },
-        { label: "Slightly", score: 1 },
-        { label: "Moderately", score: 2 },
-        { label: "Rapidly", score: 4 },
-      ],
-    },
-  ],
-
   "Garbage / Waste": [
     {
       question: "How much waste is present?",
@@ -95,32 +47,41 @@ const QUESTIONS = {
     },
   ],
 
-  "Water Supply": [
+  "Streetlight Damage": [
     {
-      question: "How severe is the water supply problem?",
+      question: "How severe is the streetlight damage?",
       options: [
-        { label: "Minor", score: 1 },
-        { label: "Moderate", score: 2 },
-        { label: "Severe", score: 3 },
-        { label: "Critical", score: 4 },
+        { label: "Minor (dim or flickering)", score: 1 },
+        { label: "Moderate (not working)", score: 2 },
+        { label: "Severe (broken or leaning pole)", score: 3 },
+        { label: "Critical (fallen or about to fall)", score: 4 },
       ],
     },
     {
-      question: "How many people are affected?",
-      options: [
-        { label: "Few people", score: 1 },
-        { label: "Several households", score: 2 },
-        { label: "Many households", score: 3 },
-        { label: "Large community", score: 4 },
-      ],
-    },
-    {
-      question: "Is there no water supply?",
+      question: "Is there any electrical hazard?",
       options: [
         { label: "No", score: 0 },
-        { label: "Occasionally", score: 1 },
-        { label: "Frequently", score: 2 },
-        { label: "Completely unavailable", score: 4 },
+        { label: "Not sure", score: 1 },
+        { label: "Exposed or hanging wires", score: 3 },
+        { label: "Sparking or live wires", score: 4 },
+      ],
+    },
+    {
+      question: "How much does it affect visibility at night?",
+      options: [
+        { label: "Not at all", score: 0 },
+        { label: "Slightly", score: 1 },
+        { label: "Moderately", score: 2 },
+        { label: "Severely (area is dark)", score: 4 },
+      ],
+    },
+    {
+      question: "How many streetlights are affected?",
+      options: [
+        { label: "One light", score: 1 },
+        { label: "2–3 lights", score: 2 },
+        { label: "Several lights on the street", score: 3 },
+        { label: "The whole street or area", score: 4 },
       ],
     },
     {
@@ -130,15 +91,6 @@ const QUESTIONS = {
         { label: "1–3 days", score: 2 },
         { label: "4–7 days", score: 3 },
         { label: "More than a week", score: 4 },
-      ],
-    },
-    {
-      question: "Is the issue getting worse?",
-      options: [
-        { label: "No", score: 0 },
-        { label: "Slightly", score: 1 },
-        { label: "Moderately", score: 2 },
-        { label: "Rapidly", score: 4 },
       ],
     },
   ],

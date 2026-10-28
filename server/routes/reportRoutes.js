@@ -6,7 +6,7 @@ import {
     verifyImage,
 } from "../utils/verifyImage.js";
 
-import { createReport, getDashboardData, getUserComplaints, getRecentComplaints, getRejectionReason } from "../controllers/reportControllers.js";
+import { createReport, getDashboardData, getUserComplaints, getRecentComplaints, getRejectionReason, getComplaintById } from "../controllers/reportControllers.js";
 
 import { checkToken } from "../middleware/checkToken.js";
 
@@ -71,6 +71,24 @@ router.get(
 router.get(
     "/recent",
     getRecentComplaints
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: GET ONE COMPLAINT
+ * ============================================================
+ * GET /api/reports/:reportId
+ * Fetches a single complaint of the logged-in citizen
+ * (used by the "View" button in the notifications list).
+ * Keep this below /dashboard, /user and /recent so those
+ * fixed paths are matched first.
+ */
+
+router.get(
+    "/:reportId",
+    checkToken,
+    getComplaintById
 );
 
 

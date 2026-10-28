@@ -163,7 +163,7 @@ export default function Reviews() {
 
   if (selected) {
     const departmentName =
-      selected.department_name || selected.department || "Department";
+      selected.department_name || selected.officer_department || "Department";
 
     return (
       <div className="min-h-screen w-full bg-slate-50 px-4 py-6 sm:px-6 lg:px-10 lg:py-8">
@@ -482,7 +482,7 @@ export default function Reviews() {
             <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
               {pending.map((complaint, index) => {
                 const departmentName =
-                  complaint.department_name || complaint.department ||
+                  complaint.department_name || complaint.officer_department ||
                   "Department";
 
                 return (
@@ -503,7 +503,7 @@ export default function Reviews() {
                         {complaint.title}
                       </p>
 
-                      <p className="mt-1 truncate text-sm text-slate-500">
+                      <p className="mt-1 break-words text-sm text-slate-500">
                         {departmentName}
                       </p>
                     </div>

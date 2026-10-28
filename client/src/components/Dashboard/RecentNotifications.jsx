@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link, useOutletContext } from "react-router";
 import axios from "axios";
 import {
   FiClock,
@@ -33,6 +34,11 @@ const formatTimeAgo = (dateString) => {
 export default function RecentNotifications({ onViewComplaint }) {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [openingId, setOpeningId] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  // Provided by CitizenLayout. Keeps the red badge in the sidebar in sync.
+  const { decrementUnreadCount } = useOutletContext() || {};
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -71,25 +77,63 @@ export default function RecentNotifications({ onViewComplaint }) {
     fetchNotifications();
   }, []);
 
-  const handleViewComplaint = async (reportId, notificationId) => {
-    try {
-      // Mark notification as read
-      await axios.patch(
-        `/api/notifications/${notificationId}/read`,
-        {},
-        { withCredentials: true }
+  const handleViewComplaint = async (notification) => {
+    // Ignore double clicks while a complaint is being opened
+    if (openingId) return;
+
+    setOpeningId(notification.id);
+    setErrorMessage("");
+
+    // 1. Mark the notification as read.
+    // The list and the sidebar badge update right away, then the
+    // request saves it in the database.
+    if (!notification.read) {
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n.id === notification.id ? { ...n, read: true } : n
+        )
       );
 
-      // Fetch the complaint details
-      const response = await axios.get(`/api/reports/${reportId}`, {
-        withCredentials: true,
-      });
+      if (decrementUnreadCount) {
+        decrementUnreadCount();
+      }
+
+      try {
+        await axios.patch(
+          `/api/notifications/${notification.id}/read`,
+          {},
+          { withCredentials: true }
+        );
+      } catch (error) {
+        console.error("Error marking notification as read:", error);
+      }
+    }
+
+    // 2. Open the complaint this notification is about.
+    if (!notification.reportId) {
+      setOpeningId(null);
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        `/api/reports/${notification.reportId}`,
+        { withCredentials: true }
+      );
 
       if (response.data.success && onViewComplaint) {
         onViewComplaint(response.data.report);
       }
     } catch (error) {
       console.error("Error viewing complaint:", error);
+
+      setErrorMessage(
+        error.response?.status === 404
+          ? "This complaint is no longer available."
+          : "Could not open the complaint. Please try again."
+      );
+    } finally {
+      setOpeningId(null);
     }
   };
 
@@ -115,6 +159,12 @@ export default function RecentNotifications({ onViewComplaint }) {
         </div>
       </div>
 
+      {errorMessage && (
+        <div className="border-b border-red-100 bg-red-50 px-5 py-2.5 text-xs font-medium text-red-600">
+          {errorMessage}
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto">
         {notifications.length === 0 ? (
           <div className="flex h-full min-h-[240px] items-center justify-center px-6 py-10">
@@ -132,6 +182,8 @@ export default function RecentNotifications({ onViewComplaint }) {
           <div className="divide-y divide-slate-100">
             {notifications.map((notification) => {
               const Icon = notification.icon;
+              const isOpening = openingId === notification.id;
+
               return (
                 <div
                   key={notification.id}
@@ -166,16 +218,13 @@ export default function RecentNotifications({ onViewComplaint }) {
                         </p>
 
                         <button
-                          onClick={() =>
-                            handleViewComplaint(
-                              notification.reportId,
-                              notification.id
-                            )
-                          }
-                          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-all hover:border-teal-500 hover:bg-teal-50 hover:text-teal-700"
+                          type="button"
+                          onClick={() => handleViewComplaint(notification)}
+                          disabled={isOpening}
+                          className="flex cursor-pointer items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-all hover:border-teal-500 hover:bg-teal-50 hover:text-teal-700 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           <FiEye className="h-3.5 w-3.5" />
-                          View
+                          {isOpening ? "Opening..." : "View"}
                         </button>
                       </div>
                     </div>
@@ -189,12 +238,12 @@ export default function RecentNotifications({ onViewComplaint }) {
 
       {notifications.length > 0 && (
         <div className="border-t border-slate-200 px-5 py-3">
-          <a
-            href="/citizen/notifications"
+          <Link
+            to="/citizen/notifications"
             className="block text-center text-sm font-medium text-teal-600 transition-colors hover:text-teal-700"
           >
             View all notifications
-          </a>
+          </Link>
         </div>
       )}
     </div>

@@ -2,6 +2,7 @@ import { body } from "express-validator";
 
 // Must match the values createReport assigns to reports.assigned_department
 export const OFFICER_DEPARTMENTS = [
+  "Road Department",
   "Public Works Department",
   "Water Supply Department",
   "Environment Management Department",

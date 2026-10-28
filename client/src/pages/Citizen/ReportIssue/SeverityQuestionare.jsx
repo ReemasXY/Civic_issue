@@ -17,7 +17,7 @@ export default function SeverityQuestionnaire({
   onCancel,
 }) {
   const questions =
-    QUESTIONS[category] || QUESTIONS.Pothole;
+    QUESTIONS[category] || QUESTIONS["Road Damage"];
 
   const [currentQuestion, setCurrentQuestion] =
     useState(0);
