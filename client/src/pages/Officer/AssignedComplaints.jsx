@@ -57,11 +57,26 @@ export default function AssignedComplaints() {
       );
     }
 
-    // Sort by severity: critical > high > medium > low
+    // Sort order:
+    // 1. severity: critical > high > medium > low
+    // 2. same severity: reported by more citizens first
+    // 3. still tied: the older complaint first
     filtered = [...filtered].sort((a, b) => {
       const severityA = SEVERITY_ORDER[a.severity_level?.toLowerCase()] || 5;
       const severityB = SEVERITY_ORDER[b.severity_level?.toLowerCase()] || 5;
-      return severityA - severityB;
+
+      if (severityA !== severityB) {
+        return severityA - severityB;
+      }
+
+      const supportersA = a.supporter_count || 0;
+      const supportersB = b.supporter_count || 0;
+
+      if (supportersA !== supportersB) {
+        return supportersB - supportersA;
+      }
+
+      return new Date(a.created_at) - new Date(b.created_at);
     });
 
     setFilteredComplaints(filtered);
@@ -110,7 +125,7 @@ export default function AssignedComplaints() {
         <p className="text-slate-600">
           Pending complaints assigned to{" "}
           {department && <span className="font-semibold">{department}</span>}
-          , sorted by severity
+          , sorted by severity and number of reports
         </p>
       </div>
 

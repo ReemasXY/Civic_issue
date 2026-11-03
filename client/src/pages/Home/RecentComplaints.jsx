@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import ScrollReveal from "../../utils/ScrollReveal";
 import axios from "axios";
+import { useNavigate } from "react-router";
 
 const RecentComplaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchRecentComplaints = async () => {
@@ -83,7 +85,10 @@ const RecentComplaints = () => {
           </ScrollReveal>
         </h2>
 
-        <button className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-[#14233B] transition hover:bg-gray-50">
+        <button
+          onClick={() => navigate("/issues")}
+          className="rounded-lg border border-gray-300 px-5 py-2 text-sm font-medium text-[#14233B] transition hover:bg-gray-50"
+        >
           View All
         </button>
 

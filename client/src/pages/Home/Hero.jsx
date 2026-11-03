@@ -157,6 +157,7 @@ export default function Hero() {
 
             {/* Secondary Button */}
             <button
+              onClick={() => navigate("/issues")}
               className="
                 inline-flex
                 items-center

@@ -20,6 +20,7 @@ import VerificationModal from "./VerificationModal";
 import SeverityQuestionnaire from "../ReportIssue/SeverityQuestionare";
 import SubmittingModal from "./SubmittingModal";
 import SuccessModal from "./SuccessModal";
+import DuplicateModal from "./DuplicateModal";
 
 const CATEGORY_OPTIONS = [
   "Road Damage",
@@ -82,6 +83,21 @@ export default function ReportIssue({
 
   const [showSuccessModal, setShowSuccessModal] =
     useState(false);
+
+  // =========================
+  // DUPLICATE DETECTION STATES
+  // =========================
+
+  const [duplicates, setDuplicates] = useState([]);
+
+  const [showDuplicateModal, setShowDuplicateModal] =
+    useState(false);
+
+  const [followingId, setFollowingId] = useState(null);
+
+  const [duplicateError, setDuplicateError] = useState("");
+
+  const [followedReport, setFollowedReport] = useState(null);
 
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -313,14 +329,13 @@ export default function ReportIssue({
          *
          * Do not submit the report yet.
          *
-         * First show the severity questionnaire.
+         * First check for duplicate complaints nearby,
+         * then show the severity questionnaire.
          */
 
         setShowVerificationModal(false);
 
-        setShowSeverityQuestionnaire(
-          true
-        );
+        await checkForDuplicates();
 
         return;
       }
@@ -706,6 +721,98 @@ export default function ReportIssue({
       }
     };
 
+
+  // =========================
+  // DUPLICATE CHECK
+  // =========================
+
+  // Looks for complaints of the same category close to the chosen
+  // location. If the check fails, the citizen is never blocked.
+  const checkForDuplicates = async () => {
+    try {
+      const response = await axios.post(
+        "/api/reports/check-duplicates",
+        {
+          category,
+          latitude: selectedLocation.lat,
+          longitude: selectedLocation.lon,
+        },
+        { withCredentials: true }
+      );
+
+      const found = response.data.duplicates || [];
+
+      if (found.length > 0) {
+        setDuplicates(found);
+        setDuplicateError("");
+        setFollowedReport(null);
+        setShowDuplicateModal(true);
+
+        return;
+      }
+    } catch (error) {
+      console.error("Duplicate check failed:", error);
+    }
+
+    // Nothing similar found (or the check failed): continue as usual.
+    setShowSeverityQuestionnaire(true);
+  };
+
+  // "Same issue, follow it": no new report is created.
+  const handleFollowExisting = async (duplicate) => {
+    if (followingId) return;
+
+    setFollowingId(duplicate.report_id);
+    setDuplicateError("");
+
+    try {
+      const response = await axios.post(
+        `/api/reports/${duplicate.report_id}/support`,
+        {},
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        setFollowedReport(duplicate);
+
+        // The form is no longer needed.
+        setTitle("");
+        setDescription("");
+        setCategory("Road Damage");
+        setSelectedLocation(null);
+        setImageFile(null);
+        setImagePreview(null);
+        setVerificationResult(null);
+        setAssessmentResult(null);
+      }
+    } catch (error) {
+      setDuplicateError(
+        error.response?.data?.error ||
+          "Could not follow this complaint. Please try again."
+      );
+    } finally {
+      setFollowingId(null);
+    }
+  };
+
+  // "Different issue, continue": go on with the normal flow.
+  const handleContinueAnyway = () => {
+    setShowDuplicateModal(false);
+    setShowSeverityQuestionnaire(true);
+  };
+
+  // "Cancel": back to the form.
+  const handleDuplicateCancel = () => {
+    setShowDuplicateModal(false);
+  };
+
+  // After the success view.
+  const handleFollowedDone = () => {
+    setShowDuplicateModal(false);
+    setFollowedReport(null);
+    navigate("/citizen/my-complaints");
+  };
+
   return (
     <>
       {/* =========================================
@@ -1076,6 +1183,22 @@ export default function ReportIssue({
           }
         />
       )}
+
+      {/* =========================================
+          DUPLICATE COMPLAINT POPUP
+      ========================================== */}
+
+      <DuplicateModal
+        isOpen={showDuplicateModal}
+        duplicates={duplicates}
+        followingId={followingId}
+        error={duplicateError}
+        followedReport={followedReport}
+        onFollow={handleFollowExisting}
+        onContinue={handleContinueAnyway}
+        onCancel={handleDuplicateCancel}
+        onFollowedDone={handleFollowedDone}
+      />
 
       {/* =========================================
           SUBMITTING LOADER MODAL

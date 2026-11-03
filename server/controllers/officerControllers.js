@@ -25,13 +25,16 @@ const STATUS_TRANSITIONS = {
 const HANDLER_ASSIGNING_STATUSES = ["verified", "rejected"];
 
 // What to write into the `notifications` table for each status an officer
-// can set.
+// can set. `message` goes to the citizen who filed the report,
+// `followerMessage` goes to citizens who follow it.
 const STATUS_NOTIFICATION_META = {
   verified: {
     type: "report_verified",
     title: "Report Verified",
     message: (reportTitle) =>
       `Your report "${reportTitle}" has been verified and assigned to a department.`,
+    followerMessage: (reportTitle) =>
+      `The complaint you are following, "${reportTitle}", has been verified and assigned to a department.`,
   },
 
   "in-progress": {
@@ -39,6 +42,8 @@ const STATUS_NOTIFICATION_META = {
     title: "Work In Progress",
     message: (reportTitle) =>
       `Officers are actively working on "${reportTitle}".`,
+    followerMessage: (reportTitle) =>
+      `Officers are actively working on "${reportTitle}", a complaint you are following.`,
   },
 
   resolved: {
@@ -46,6 +51,8 @@ const STATUS_NOTIFICATION_META = {
     title: "Report Resolved",
     message: (reportTitle) =>
       `Your report "${reportTitle}" has been resolved.`,
+    followerMessage: (reportTitle) =>
+      `The complaint you are following, "${reportTitle}", has been resolved.`,
   },
 
   rejected: {
@@ -53,6 +60,8 @@ const STATUS_NOTIFICATION_META = {
     title: "Report Rejected",
     message: (reportTitle) =>
       `Your report "${reportTitle}" was not accepted. Click to view details.`,
+    followerMessage: (reportTitle) =>
+      `The complaint you are following, "${reportTitle}", was not accepted. Click to view details.`,
   },
 };
 
@@ -150,7 +159,11 @@ export const getOfficerDashboardData = async (req, res) => {
         assigned_department,
         handled_by,
         created_at,
-        updated_at
+        updated_at,
+        (
+          SELECT COUNT(*) FROM report_supporters s
+          WHERE s.report_id = reports.report_id
+        )::int AS supporter_count
       FROM reports
       WHERE assigned_department = $1
         AND (handled_by IS NULL OR handled_by = $2)
@@ -255,7 +268,11 @@ export const getOfficerComplaints = async (req, res) => {
         assigned_department,
         handled_by,
         created_at,
-        updated_at
+        updated_at,
+        (
+          SELECT COUNT(*) FROM report_supporters s
+          WHERE s.report_id = reports.report_id
+        )::int AS supporter_count
       FROM reports
       WHERE assigned_department = $1
         AND (handled_by IS NULL OR handled_by = $2)
@@ -573,6 +590,42 @@ export const updateComplaintStatus = async (req, res) => {
     }
 
     // --------------------------------------------------
+    // Create the same notification for every citizen
+    // who follows this complaint
+    // --------------------------------------------------
+
+    let followerNotifications = [];
+
+    if (notificationMeta) {
+      const followerResult = await client.query(
+        `
+          INSERT INTO notifications
+            (user_id, report_id, type, title, message)
+
+          SELECT
+            s.user_id,
+            $1::uuid,
+            $2::varchar,
+            $3::varchar,
+            $4::text
+
+          FROM report_supporters s
+          WHERE s.report_id = $1::uuid
+
+          RETURNING *
+        `,
+        [
+          updatedReport.report_id,
+          notificationMeta.type,
+          notificationMeta.title,
+          notificationMeta.followerMessage(updatedReport.title),
+        ]
+      );
+
+      followerNotifications = followerResult.rows;
+    }
+
+    // --------------------------------------------------
     // Commit transaction
     // --------------------------------------------------
 
@@ -588,6 +641,13 @@ export const updateComplaintStatus = async (req, res) => {
         insertedNotification
       );
     }
+
+    followerNotifications.forEach((notification) => {
+      sendNotificationToUser(
+        notification.user_id,
+        notification
+      );
+    });
 
     // --------------------------------------------------
     // Success response

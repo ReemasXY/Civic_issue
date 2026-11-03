@@ -6,7 +6,18 @@ import {
     verifyImage,
 } from "../utils/verifyImage.js";
 
-import { createReport, getDashboardData, getUserComplaints, getRecentComplaints, getRejectionReason, getComplaintById } from "../controllers/reportControllers.js";
+import {
+    createReport,
+    getDashboardData,
+    getUserComplaints,
+    getRecentComplaints,
+    getRejectionReason,
+    getComplaintById,
+    checkDuplicates,
+    supportReport,
+} from "../controllers/reportControllers.js";
+
+import { getPublicComplaints } from "../controllers/publicControllers.js";
 
 import { checkToken } from "../middleware/checkToken.js";
 
@@ -76,6 +87,22 @@ router.get(
 
 /*
  * ============================================================
+ * ROUTE: LIST ISSUES FOR EVERYONE (PUBLIC)
+ * ============================================================
+ * GET /api/reports/public
+ * Query: page, limit, search, category, status
+ * No login needed. It must stay ABOVE "/:reportId", otherwise
+ * Express would treat the word "public" as a report id.
+ */
+
+router.get(
+    "/public",
+    getPublicComplaints
+);
+
+
+/*
+ * ============================================================
  * ROUTE: GET ONE COMPLAINT
  * ============================================================
  * GET /api/reports/:reportId
@@ -89,6 +116,37 @@ router.get(
     "/:reportId",
     checkToken,
     getComplaintById
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: CHECK FOR DUPLICATE COMPLAINTS
+ * ============================================================
+ * POST /api/reports/check-duplicates
+ * Body: { category, latitude, longitude }
+ * Returns open complaints of the same category within a few metres.
+ */
+
+router.post(
+    "/check-duplicates",
+    checkToken,
+    checkDuplicates
+);
+
+
+/*
+ * ============================================================
+ * ROUTE: FOLLOW AN EXISTING COMPLAINT
+ * ============================================================
+ * POST /api/reports/:reportId/support
+ * Adds the citizen as a supporter instead of creating a duplicate.
+ */
+
+router.post(
+    "/:reportId/support",
+    checkToken,
+    supportReport
 );
 
 

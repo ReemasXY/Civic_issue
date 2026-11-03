@@ -85,14 +85,6 @@ export default function Login() {
 
       <Toast />
 
-      <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
-        .font-sans {
-          font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-        }
-      `}</style>
-
       <div
         ref={loginRef}
         className="min-h-screen w-full flex items-center justify-center px-4 py-6"

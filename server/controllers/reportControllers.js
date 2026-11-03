@@ -6,6 +6,9 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Duplicate detection settings. Change them here.
+const DUPLICATE_RADIUS_METERS = 50; // same category within this distance
+
 /**
  * Create a new civic issue report
  * Saves the uploaded image to server storage and records the report with image_url and status in PostgreSQL
@@ -102,26 +105,36 @@ export const getUserComplaints = async (req, res) => {
       });
     }
 
-    // Get all reports for the user
+    // Reports the citizen filed + reports the citizen follows.
+    // is_following tells the page which ones to mark with a badge.
     const reportsQuery = `
       SELECT
-        report_id,
-        title,
-        description,
-        category,
-        location_short_label,
-        location_full_label,
-        latitude,
-        longitude,
-        image_url,
-        status,
-        severity_level,
-        severity_score,
-        created_at,
-        updated_at
-      FROM reports
-      WHERE user_id = $1
-      ORDER BY created_at DESC
+        r.report_id,
+        r.title,
+        r.description,
+        r.category,
+        r.location_short_label,
+        r.location_full_label,
+        r.latitude,
+        r.longitude,
+        r.image_url,
+        r.status,
+        r.severity_level,
+        r.severity_score,
+        r.created_at,
+        r.updated_at,
+        (r.user_id <> $1) AS is_following,
+        (
+          SELECT COUNT(*) FROM report_supporters s
+          WHERE s.report_id = r.report_id
+        )::int AS supporter_count
+      FROM reports r
+      WHERE r.user_id = $1
+         OR EXISTS (
+           SELECT 1 FROM report_supporters s
+           WHERE s.report_id = r.report_id AND s.user_id = $1
+         )
+      ORDER BY r.created_at DESC
     `;
 
     const reportsResult = await pool.query(reportsQuery, [user_id]);
@@ -198,26 +211,34 @@ export const getComplaintById = async (req, res) => {
       });
     }
 
-    // Scoped to user_id so a citizen can only open their own complaints.
+    // A citizen can open their own complaints and the ones they follow.
     const reportQuery = `
       SELECT
-        report_id,
-        title,
-        description,
-        category,
-        location_short_label,
-        location_full_label,
-        latitude,
-        longitude,
-        image_url,
-        status,
-        severity_level,
-        severity_score,
-        created_at,
-        updated_at,
-        resolved_at
-      FROM reports
-      WHERE report_id = $1 AND user_id = $2
+        r.report_id,
+        r.title,
+        r.description,
+        r.category,
+        r.location_short_label,
+        r.location_full_label,
+        r.latitude,
+        r.longitude,
+        r.image_url,
+        r.status,
+        r.severity_level,
+        r.severity_score,
+        r.created_at,
+        r.updated_at,
+        r.resolved_at,
+        (r.user_id <> $2) AS is_following
+      FROM reports r
+      WHERE r.report_id = $1
+        AND (
+          r.user_id = $2
+          OR EXISTS (
+            SELECT 1 FROM report_supporters s
+            WHERE s.report_id = r.report_id AND s.user_id = $2
+          )
+        )
     `;
 
     const reportResult = await pool.query(reportQuery, [reportId, user_id]);
@@ -247,6 +268,214 @@ export const getComplaintById = async (req, res) => {
     return res.status(500).json({
       success: false,
       error: "An error occurred while fetching the complaint.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * Check whether a similar complaint already exists near a location.
+ * POST /api/reports/check-duplicates
+ * Body: { category, latitude, longitude }
+ *
+ * A complaint counts as a possible duplicate when it has the same category,
+ * is within DUPLICATE_RADIUS_METERS, and is still open (pending, verified
+ * or in-progress). Age does not matter. Nobody's name is returned.
+ */
+export const checkDuplicates = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated. Please log in.",
+      });
+    }
+
+    if (req.user.role !== "citizen") {
+      return res.status(403).json({
+        success: false,
+        error: "Citizen role required.",
+      });
+    }
+
+    const { category } = req.body;
+    const latitude = parseFloat(req.body.latitude);
+    const longitude = parseFloat(req.body.longitude);
+
+    // Without a category and a location there is nothing to compare.
+    if (
+      !category ||
+      typeof category !== "string" ||
+      !Number.isFinite(latitude) ||
+      !Number.isFinite(longitude)
+    ) {
+      return res.status(200).json({ success: true, duplicates: [] });
+    }
+
+    // Size of a small search box around the point (about the radius).
+    // It lets PostgreSQL skip far-away rows before doing the exact maths.
+    const latDelta = DUPLICATE_RADIUS_METERS / 111320;
+    const lonDelta =
+      DUPLICATE_RADIUS_METERS /
+      (111320 * Math.max(Math.cos((latitude * Math.PI) / 180), 0.01));
+
+    const duplicatesQuery = `
+      SELECT * FROM (
+        SELECT
+          r.report_id,
+          r.title,
+          r.category,
+          r.image_url,
+          r.status,
+          r.severity_level,
+          r.location_short_label,
+          r.created_at,
+          (r.user_id = $4::uuid) AS is_own,
+          EXISTS (
+            SELECT 1 FROM report_supporters s
+            WHERE s.report_id = r.report_id AND s.user_id = $4::uuid
+          ) AS is_following,
+          (
+            SELECT COUNT(*) FROM report_supporters s
+            WHERE s.report_id = r.report_id
+          )::int AS supporter_count,
+          ROUND(
+            6371000 * 2 * ASIN(SQRT(LEAST(1.0::float8,
+              POWER(SIN(RADIANS(r.latitude::float8 - $2::float8) / 2), 2) +
+              COS(RADIANS($2::float8)) * COS(RADIANS(r.latitude::float8)) *
+              POWER(SIN(RADIANS(r.longitude::float8 - $3::float8) / 2), 2)
+            )))
+          )::int AS distance_m
+        FROM reports r
+        WHERE r.category = $1::varchar
+          AND r.latitude IS NOT NULL
+          AND r.longitude IS NOT NULL
+          AND r.latitude::float8  BETWEEN $2::float8 - $6::float8 AND $2::float8 + $6::float8
+          AND r.longitude::float8 BETWEEN $3::float8 - $7::float8 AND $3::float8 + $7::float8
+          AND r.status IN ('pending', 'verified', 'in-progress')
+      ) nearby
+      WHERE nearby.distance_m <= $5::int
+      ORDER BY nearby.distance_m ASC, nearby.created_at DESC
+      LIMIT 3
+    `;
+
+    const result = await pool.query(duplicatesQuery, [
+      category.trim(),
+      latitude,
+      longitude,
+      user_id,
+      DUPLICATE_RADIUS_METERS,
+      latDelta,
+      lonDelta,
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      duplicates: result.rows,
+    });
+  } catch (error) {
+    console.error("❌ Error in checkDuplicates:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while checking for similar complaints.",
+      details: error.message,
+    });
+  }
+};
+
+/**
+ * Follow an existing complaint instead of creating a duplicate.
+ * POST /api/reports/:reportId/support
+ *
+ * The citizen is added to report_supporters. From then on they receive the
+ * same status notifications as the original reporter, and the officer sees
+ * "Reported by N citizens".
+ */
+export const supportReport = async (req, res) => {
+  try {
+    const user_id = req.user?.user_id;
+    const { reportId } = req.params;
+
+    if (!user_id) {
+      return res.status(401).json({
+        success: false,
+        error: "User not authenticated. Please log in.",
+      });
+    }
+
+    if (req.user.role !== "citizen") {
+      return res.status(403).json({
+        success: false,
+        error: "Citizen role required.",
+      });
+    }
+
+    const reportResult = await pool.query(
+      `SELECT report_id, user_id, status FROM reports WHERE report_id = $1`,
+      [reportId]
+    );
+
+    if (reportResult.rows.length === 0) {
+      return res.status(404).json({
+        success: false,
+        error: "Report not found.",
+      });
+    }
+
+    const report = reportResult.rows[0];
+
+    if (report.user_id === user_id) {
+      return res.status(400).json({
+        success: false,
+        error: "This is your own report, so you are already following it.",
+      });
+    }
+
+    if (!["pending", "verified", "in-progress"].includes(report.status)) {
+      return res.status(400).json({
+        success: false,
+        error: "This complaint is already closed and can no longer be followed.",
+      });
+    }
+
+    // ON CONFLICT: following twice is harmless.
+    const insertResult = await pool.query(
+      `INSERT INTO report_supporters (report_id, user_id)
+       VALUES ($1, $2)
+       ON CONFLICT (report_id, user_id) DO NOTHING
+       RETURNING report_id`,
+      [reportId, user_id]
+    );
+
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS supporter_count
+       FROM report_supporters
+       WHERE report_id = $1`,
+      [reportId]
+    );
+
+    return res.status(200).json({
+      success: true,
+      alreadyFollowing: insertResult.rows.length === 0,
+      supporterCount: countResult.rows[0].supporter_count,
+    });
+  } catch (error) {
+    // 22P02 = the id in the URL is not a valid UUID
+    if (error.code === "22P02") {
+      return res.status(404).json({
+        success: false,
+        error: "Report not found.",
+      });
+    }
+
+    console.error("❌ Error in supportReport:", error);
+
+    return res.status(500).json({
+      success: false,
+      error: "An error occurred while following the complaint.",
       details: error.message,
     });
   }
@@ -422,10 +651,18 @@ export const getRejectionReason = async (req, res) => {
     }
 
     if (reportResult.rows[0].user_id !== user_id) {
-      return res.status(403).json({
-        success: false,
-        error: "You do not have permission to view this report.",
-      });
+      // Citizens who follow the complaint may see the reason as well.
+      const followerResult = await pool.query(
+        `SELECT 1 FROM report_supporters WHERE report_id = $1 AND user_id = $2`,
+        [reportId, user_id]
+      );
+
+      if (followerResult.rows.length === 0) {
+        return res.status(403).json({
+          success: false,
+          error: "You do not have permission to view this report.",
+        });
+      }
     }
 
     // Fetch rejection reason

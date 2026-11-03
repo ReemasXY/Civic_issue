@@ -7,25 +7,35 @@ import {
   FiLogOut,
 } from "react-icons/fi";
 import { PiShieldCheckDuotone } from "react-icons/pi";
-import { useNavigate } from "react-router";
+import { useNavigate, useLocation } from "react-router";
 import axios from "axios";
 import successToast from "../utils/SuccessToast";
 
+// Label shown in the navbar -> page it opens
+const NAV_ROUTES = {
+  Home: "/",
+  About: "/about",
+  "How It Works": "/howitworks",
+  Departments: "/departments",
+};
+
+const navLinks = Object.keys(NAV_ROUTES);
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [activeLink, setActiveLink] = useState("Home");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navigate = useNavigate();
-  
+  const { pathname } = useLocation();
 
-  const navLinks = [
-    "Home",
-    "About",
-    "How It Works",
-    "Departments",
-    "Contact",
-  ];
+  // The highlighted link always follows the address in the browser
+  const activeLink =
+    navLinks.find((label) => NAV_ROUTES[label] === pathname) || "";
+
+  // Every page opens from the top
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -51,9 +61,15 @@ export default function Navbar() {
 
   }, []);
 
-  const handleLinkClick = (label) => {
-    setActiveLink(label);
+  // Open a page, or scroll to the top if we are already on it
+  const goTo = (to) => {
     setIsOpen(false);
+
+    if (pathname === to) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      navigate(to);
+    }
   };
 
   const handleLogout = async () => {
@@ -96,10 +112,10 @@ export default function Navbar() {
 
           {/* Logo */}
           <a
-            href="#"
+            href="/"
             onClick={(e) => {
               e.preventDefault();
-              handleLinkClick("Home");
+              goTo("/");
             }}
             className="flex items-center gap-2.5"
           >
@@ -145,10 +161,10 @@ export default function Navbar() {
             {navLinks.map((label) => (
               <li key={label}>
                 <a
-                  href="#"
+                  href={NAV_ROUTES[label]}
                   onClick={(e) => {
                     e.preventDefault();
-                    handleLinkClick(label);
+                    goTo(NAV_ROUTES[label]);
                   }}
                   className={`
                     relative block rounded-lg px-3 py-2

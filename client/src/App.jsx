@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import axios from "axios";
 import Home from "./pages/Home/Home";
 import HowItWorks from "./pages/HowItWorks/HowItWorks";
+import ViewIssues from "./pages/Home/ViewIssues";
 import { createBrowserRouter } from "react-router";
 import { RouterProvider } from "react-router/dom";
 import Layout from "./components/Layout";
@@ -22,6 +23,8 @@ import AdminDashboard from "./pages/Admin/AdminDashboard";
 import AdminOfficers from "./pages/Admin/AdminOfficers";
 import AdminComplaints from "./pages/Admin/AdminComplaints";
 import AdminDepartments from "./pages/Admin/AdminDepartments";
+import About from "./pages/AboutUs/About";
+import Departments from "./pages/Departments/Departments";
 
 function App() {
 // Setup axios interceptors to handle authentication errors globally
@@ -38,6 +41,18 @@ const router = createBrowserRouter([
     {
       path: "howitworks",
       element: <HowItWorks />,
+    },
+        {
+      path: "about",
+      element: <About />,
+    },
+        {
+      path: "departments",
+      element: <Departments />,
+    },
+    {
+      path: "issues",
+      element: <ViewIssues />,
     },
   ],
 },

@@ -1,3 +1,19 @@
+import { Link } from "react-router";
+
+const QUICK_LINKS = [
+  { label: "Home", to: "/" },
+  { label: "About Us", to: "/about" },
+  { label: "How It Works", to: "/howitworks" },
+  { label: "Departments", to: "/departments" },
+  { label: "Public Complaints", to: "/issues" },
+];
+
+const CITIZEN_LINKS = [
+  { label: "Report an Issue", to: "/citizen/report" },
+  { label: "Track Complaints", to: "/citizen/my-complaints" },
+  { label: "Login / Register", to: "/login" },
+];
+
 const Footer = () => {
   return (
     <footer className="bg-[#071B2D] text-white">
@@ -30,50 +46,16 @@ const Footer = () => {
             </h3>
 
             <ul className="space-y-3 text-sm text-slate-300">
-              <li>
-                <a
-                  href="/"
-                  className="transition hover:text-emerald-400"
-                >
-                  Home
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/about"
-                  className="transition hover:text-emerald-400"
-                >
-                  About Us
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/how-it-works"
-                  className="transition hover:text-emerald-400"
-                >
-                  How It Works
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/complaints"
-                  className="transition hover:text-emerald-400"
-                >
-                  Public Complaints
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/contact"
-                  className="transition hover:text-emerald-400"
-                >
-                  Contact Us
-                </a>
-              </li>
+              {QUICK_LINKS.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.to}
+                    className="transition hover:text-emerald-400"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -84,50 +66,16 @@ const Footer = () => {
             </h3>
 
             <ul className="space-y-3 text-sm text-slate-300">
-              <li>
-                <a
-                  href="/report"
-                  className="transition hover:text-emerald-400"
-                >
-                  Report an Issue
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/complaints"
-                  className="transition hover:text-emerald-400"
-                >
-                  Track Complaints
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/nearby"
-                  className="transition hover:text-emerald-400"
-                >
-                  Nearby Complaints
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/login"
-                  className="transition hover:text-emerald-400"
-                >
-                  Login
-                </a>
-              </li>
-
-              <li>
-                <a
-                  href="/register"
-                  className="transition hover:text-emerald-400"
-                >
-                  Register
-                </a>
-              </li>
+              {CITIZEN_LINKS.map((link) => (
+                <li key={link.label}>
+                  <Link
+                    to={link.to}
+                    className="transition hover:text-emerald-400"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
 
@@ -200,7 +148,7 @@ const Footer = () => {
       {/* Bottom Footer */}
       <div className="border-t border-slate-700/70">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 px-6 py-5 text-sm text-slate-400 md:flex-row md:px-10 lg:px-16">
-          
+
           <p>
             © 2026 CivicCare. All rights reserved.
           </p>
@@ -265,6 +213,6 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+}
 
 export default Footer;

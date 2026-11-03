@@ -6,6 +6,8 @@ import {
   FiMapPin,
   FiCalendar,
   FiPackage,
+  FiUsers,
+  FiBookmark,
 } from "react-icons/fi";
 
 export default function ComplaintCard({ complaint, onViewDetails }) {
@@ -79,8 +81,8 @@ export default function ComplaintCard({ complaint, onViewDetails }) {
   };
 
   return (
-    <div className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
-      <div className="flex gap-4 p-5">
+    <div className="group flex h-full flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:shadow-md">
+      <div className="flex flex-1 gap-4 p-5">
         {/* Image */}
         <img
           src={`${complaint.image_url}`}
@@ -131,12 +133,26 @@ export default function ComplaintCard({ complaint, onViewDetails }) {
                 {complaint.severity_level}
               </span>
             )}
+
+            {complaint.is_following && (
+              <span className="flex items-center gap-1.5 rounded-md border border-teal-200 bg-teal-50 px-2.5 py-1 text-xs font-medium text-teal-700">
+                <FiBookmark className="h-3.5 w-3.5" />
+                Following
+              </span>
+            )}
+
+            {complaint.supporter_count > 0 && (
+              <span className="flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600">
+                <FiUsers className="h-3.5 w-3.5" />
+                Reported by {complaint.supporter_count + 1} citizens
+              </span>
+            )}
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-3">
+      <div className="mt-auto flex items-center justify-between border-t border-slate-100 bg-slate-50 px-5 py-3">
         <div className="flex items-center gap-1.5 text-xs text-slate-500">
           <FiCalendar className="h-3.5 w-3.5" />
           <span>Submitted: {formatDate(complaint.created_at)}</span>
